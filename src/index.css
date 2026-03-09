@@ -1,0 +1,479 @@
+@import "tailwindcss";
+
+@layer base {
+  /* ============================================
+     SISTEMA DE TEMAS — MISTRAJES
+     Tema por defecto: OSCURO
+  ============================================ */
+  :root,
+  [data-theme="dark"] {
+    /* — FONDOS — */
+    --bg-page: #080810; /* Fondo principal de toda la página */
+    --bg-surface: #10101a; /* Fondo de cards, panels, navbar */
+    --bg-surface-2: #181826; /* Fondo de cards hover, modales, dropdowns */
+    --bg-surface-3: #1e1e30; /* Fondo de elementos anidados */
+    --bg-input: #0d0d18; /* Fondo de inputs y selects */
+
+    /* — TEXTOS — */
+    --text-primary: #eeeeff; /* Texto principal — blanco frío */
+    --text-secondary: #9090b8; /* Texto secundario — gris violáceo */
+    --text-muted: #50507a; /* Placeholders, notas, info terciaria */
+    --text-inverse: #080810; /* Texto sobre botones claros */
+
+    /* — BORDES — */
+    --border-soft: rgba(255, 255, 255, 0.08);
+    --border-medium: rgba(255, 255, 255, 0.14);
+    --border-strong: rgba(255, 255, 255, 0.24);
+    --border-focus: rgba(124, 127, 245, 0.6);
+
+    /* — MARCA (idénticos en ambos temas) — */
+    --color-primary: #7c7ff5; /* Indigo — ligeramente más brillante en oscuro */
+    --color-accent: #b76ef7; /* Purple */
+    --color-primary-dim: rgba(124, 127, 245, 0.15);
+    --color-accent-dim: rgba(183, 110, 247, 0.15);
+
+    /* — GRADIENTES — */
+    --gradient-brand: linear-gradient(135deg, #7c7ff5 0%, #b76ef7 100%);
+    --gradient-brand-r: linear-gradient(135deg, #b76ef7 0%, #7c7ff5 100%);
+
+    /* — SOMBRAS — */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.8);
+    --shadow-glow: 0 0 30px rgba(124, 127, 245, 0.25);
+
+    /* — GLASS — */
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
+    /* — SECTORES — */
+    --sector-moda-from: #3b82f6;
+    --sector-moda-to: #6366f1;
+    --sector-fiestas-from: #a855f7;
+    --sector-fiestas-to: #ec4899;
+    --sector-belleza-from: #f59e0b;
+    --sector-belleza-to: #f97316;
+    --sector-maquinaria-from: #10b981;
+    --sector-maquinaria-to: #0d9488;
+
+    /* — NAVBAR — */
+    --navbar-bg: rgba(8, 8, 16, 0.85);
+    --navbar-border: rgba(255, 255, 255, 0.06);
+
+    /* — ANDEAN SHAPES (fondo animado) — */
+    --shape-color-1: rgba(99, 102, 241, 0.08);
+    --shape-color-2: rgba(168, 85, 247, 0.06);
+
+    /* — WHATSAPP WIDGET — */
+    --wa-bg: #1f2c34;
+    --wa-header: #075e54;
+    --wa-bubble-in: #202c33;
+    --wa-text: #e9edef;
+
+    --font-sans: "Inter", system-ui, sans-serif;
+    --font-display: "Outfit", sans-serif;
+  }
+
+  /* ============================================
+     TEMA CLARO — Andean Light
+     Se activa con: <html data-theme="light">
+  ============================================ */
+  [data-theme="light"] {
+    /* — FONDOS — */
+    --bg-page: #f5f5fc; /* Blanco con tinte índigo muy sutil */
+    --bg-surface: #ffffff; /* Cards y panels: blanco puro */
+    --bg-surface-2: #ededf8; /* Hover de cards, dropdowns */
+    --bg-surface-3: #e4e4f2; /* Elementos anidados */
+    --bg-input: #f0f0fa; /* Inputs */
+
+    /* — TEXTOS — */
+    --text-primary: #111128; /* Casi negro con tinte índigo — muy legible */
+    --text-secondary: #44446e; /* Gris-índigo — subtítulos y descripciones */
+    --text-muted: #8888aa; /* Placeholders */
+    --text-inverse: #ffffff; /* Texto sobre botones de color */
+
+    /* — BORDES — */
+    --border-soft: rgba(99, 102, 241, 0.12);
+    --border-medium: rgba(99, 102, 241, 0.22);
+    --border-strong: rgba(99, 102, 241, 0.4);
+    --border-focus: rgba(99, 102, 241, 0.65);
+
+    /* — MARCA — */
+    --color-primary: #5254e8; /* Indigo más saturado — contrasta bien sobre blanco */
+    --color-accent: #9333ea; /* Purple vibrante */
+    --color-primary-dim: rgba(82, 84, 232, 0.1);
+    --color-accent-dim: rgba(147, 51, 234, 0.1);
+
+    /* — GRADIENTES — */
+    --gradient-brand: linear-gradient(135deg, #5254e8 0%, #9333ea 100%);
+    --gradient-brand-r: linear-gradient(135deg, #9333ea 0%, #5254e8 100%);
+
+    /* — SOMBRAS — */
+    --shadow-sm: 0 2px 8px rgba(99, 102, 241, 0.1);
+    --shadow-md: 0 4px 20px rgba(99, 102, 241, 0.16);
+    --shadow-lg: 0 8px 40px rgba(99, 102, 241, 0.22);
+    --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.2);
+
+    /* — GLASS — */
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(99, 102, 241, 0.18);
+
+    /* — SECTORES (más saturados para tema claro) — */
+    --sector-moda-from: #2563eb;
+    --sector-moda-to: #4338ca;
+    --sector-fiestas-from: #9333ea;
+    --sector-fiestas-to: #db2777;
+    --sector-belleza-from: #d97706;
+    --sector-belleza-to: #ea580c;
+    --sector-maquinaria-from: #059669;
+    --sector-maquinaria-to: #0f766e;
+
+    /* — NAVBAR — */
+    --navbar-bg: rgba(245, 245, 252, 0.92);
+    --navbar-border: rgba(99, 102, 241, 0.12);
+
+    /* — ANDEAN SHAPES — */
+    --shape-color-1: rgba(99, 102, 241, 0.06);
+    --shape-color-2: rgba(147, 51, 234, 0.04);
+
+    /* — WHATSAPP WIDGET (sin cambio — WhatsApp siempre verde) — */
+    --wa-bg: #f0f2f5;
+    --wa-header: #075e54;
+    --wa-bubble-in: #ffffff;
+    --wa-text: #111128;
+  }
+
+  /* Fondo y texto base de TODA la página */
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+    transition:
+      background-color 0.35s ease,
+      color 0.25s ease;
+  }
+
+  /* Navbar */
+  .navbar,
+  nav,
+  header {
+    background: var(--navbar-bg);
+    border-bottom: 1px solid var(--navbar-border) !important;
+    backdrop-filter: blur(16px);
+  }
+
+  /* Andean Animated Background Layer */
+  .andean-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .andean-shape {
+    position: absolute;
+    background: var(--shape-color-1);
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 0 L100 50 L50 100 L0 50 Z M50 20 L80 50 L50 80 L20 50 Z' fill='black'/%3E%3C/svg%3E");
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    opacity: 0.6;
+    filter: blur(1px);
+    animation: floatAndean 40s linear infinite;
+  }
+
+  .andean-shape:nth-child(even) {
+    background: var(--shape-color-2);
+  }
+
+  @keyframes floatAndean {
+    0% {
+      transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    33% {
+      transform: translate(10vw, 10vh) rotate(120deg) scale(1.1);
+    }
+    66% {
+      transform: translate(-5vw, 15vh) rotate(240deg) scale(0.9);
+    }
+    100% {
+      transform: translate(0, 0) rotate(360deg) scale(1);
+    }
+  }
+
+  /* Custom Cursor Follower */
+  .cursor-follower {
+    position: fixed;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(
+      circle,
+      var(--color-primary-dim) 0%,
+      transparent 70%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition:
+      transform 0.1s ease-out,
+      opacity 0.3s ease;
+    filter: blur(40px);
+    display: none;
+  }
+
+  @media (pointer: fine) {
+    .cursor-follower {
+      display: block;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+
+  p,
+  span,
+  div {
+    color: var(--text-secondary);
+  }
+
+  /* Transición global suave al cambiar de tema */
+  *,
+  *::before,
+  *::after {
+    transition:
+      background-color 0.35s ease,
+      border-color 0.3s ease,
+      color 0.25s ease,
+      box-shadow 0.3s ease;
+  }
+  /* Excluir elementos con animaciones propias para evitar conflictos */
+  .andean-shape,
+  .cursor-follower,
+  [class*="animate-"],
+  [class*="transition-"] {
+    transition:
+      background-color 0.35s ease,
+      border-color 0.3s ease,
+      color 0.25s ease !important;
+  }
+}
+
+@layer utilities {
+  /* Glass Cards */
+  .glass-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-md);
+    border-radius: 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .glass-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-medium);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Botón primario — sin cambio (gradiente funciona en ambos) */
+  .btn-guambra-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 0.75rem 2.25rem;
+    font-weight: 700;
+    background: var(--gradient-brand);
+    color: var(--text-inverse) !important;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    box-shadow: 0 4px 20px var(--color-primary-dim);
+    transition: all 300ms ease;
+  }
+  .btn-guambra-primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px var(--color-primary-dim);
+  }
+
+  /* Botón secundario */
+  .btn-guambra-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 0.75rem 2.25rem;
+    font-weight: 700;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-medium);
+    color: var(--text-primary) !important;
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    transition: all 300ms ease;
+  }
+  .btn-guambra-secondary:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-dim);
+    color: var(--color-primary) !important;
+  }
+
+  /* Inputs */
+  .input-guambra {
+    display: block;
+    width: 100%;
+    padding: 1.1rem 1.4rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    color: var(--text-primary) !important;
+    transition: all 300ms;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .input-guambra::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 1;
+  }
+  .input-guambra:focus {
+    border-color: var(--border-focus);
+    background: var(--bg-surface-2);
+    box-shadow: 0 0 0 3px var(--color-primary-dim);
+  }
+
+  /* Select: restore arrow */
+  select.input-guambra {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(124,127,245,0.6)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    height: auto !important;
+    min-height: 3rem;
+  }
+
+  .input-guambra option {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+  }
+
+  /* Badge counter */
+  .badge-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .text-gradient-guambra {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+    font-weight: 900 !important;
+  }
+
+  /* ─── Custom scrollbar (thin, glass-style) ─── */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 9999px;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Separadores / dividers */
+  hr, .divider {
+    border-color: var(--border-soft);
+  }
+
+  /* Fondos de sección alternados */
+  .section-alt {
+    background: var(--bg-surface);
+  }
+
+  /* Footer */
+  footer {
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-soft);
+    color: var(--text-secondary);
+  }
+  footer a {
+    color: var(--text-muted);
+  }
+  footer a:hover {
+    color: var(--color-primary);
+  }
+}
+
+/* ============================================================
+   DATE / TIME INPUTS
+   ============================================================ */
+
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"],
+.dark-date {
+  color-scheme: light dark;
+}
+
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="datetime-local"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="month"] {
+  color: #eeeeff !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: var(--text-primary-filter, none);
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1) !important;
+}
