@@ -6,7 +6,7 @@ import {
   TrendingUp, TrendingDown, Factory, ShoppingCart, Landmark,
   Receipt, Calendar as CalendarIcon, Shirt, Bell, Tag,
   Ban, Clock, Wrench, Info, LayoutDashboard, ShieldCheck,
-  Database, Megaphone, CheckSquare
+  Database, Megaphone, CheckSquare, BookOpen
 } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 import { useAuthStore } from '../../stores/authStore';
@@ -37,6 +37,7 @@ const MenuPrincipal = [
   { name: 'Panel Maestro', href: '/super-admin/negocios', icon: ShieldCheck, roles: ['super_admin'] },
   { name: 'Pedidos DEMOS', href: '/super-admin/pedidos', icon: CheckSquare, roles: ['super_admin'] },
   { name: 'Avisos Globales', href: '/super-admin/avisos', icon: Megaphone, roles: ['super_admin'] },
+  { name: 'Tutoriales', href: '/super-admin/tutoriales', icon: BookOpen, roles: ['super_admin'] },
 ];
 
 

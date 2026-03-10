@@ -6,6 +6,7 @@ import FlujoRegistro from "./paginas/registro-negocio/FlujoRegistro";
 import RegistroExitoso from "./paginas/registro-negocio/RegistroExitoso";
 import IniciarSesion from "./paginas/autenticacion/IniciarSesion";
 import GestionNegocios from "./paginas/administrador-central/GestionNegocios";
+import GestionTutoriales from "./paginas/administrador-central/GestionTutoriales";
 import SolicitudesRegistro from "./paginas/administrador-central/SolicitudesRegistro";
 import Landing from "./paginas/tienda/Landing";
 import AdminDashboard from "./paginas/administracion/AdminDashboard";
@@ -655,6 +656,7 @@ function App() {
            <Route path="negocios" element={<GestionNegocios initialTab="tenants" />} />
            <Route path="pedidos" element={<GestionNegocios initialTab="pedidos" />} />
            <Route path="avisos" element={<GestionNegocios initialTab="avisos" />} />
+           <Route path="tutoriales" element={<GestionTutoriales />} />
         </Route>
       </Routes>
     </BrowserRouter>
