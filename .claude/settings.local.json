@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls -la /d/desarrollo-web/multitenant-mistrajes/src/paginas/tienda/*.jsx)"
+      "Bash(ls -la /d/desarrollo-web/multitenant-mistrajes/src/paginas/tienda/*.jsx)",
+      "Bash(grep -r \"configuracion_tienda\\\\|suscripcion_activa\\\\|permisos\\\\|trial_inicio\\\\|trial_fin\\\\|motivo_suspension\" supabase/migrations/ --include=\"*.sql\" 2>/dev/null | head -30)",
+      "Bash(find /d/desarrollo-web/multitenant-mistrajes/supabase -name \"*.sql\" -type f 2>/dev/null | sort)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:jwnabxbiekmempmocdge.supabase.co)",
+      "Bash(curl -s \"https://jwnabxbiekmempmocdge.supabase.co/rest/v1/tenants?select=*&limit=1\" \\\\\n  -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\" \\\\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\")",
+      "Bash(curl -s \"https://jwnabxbiekmempmocdge.supabase.co/rest/v1/solicitudes_registro?select=*&limit=1\" \\\\\n  -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\" \\\\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\" && echo \"\" && \\\\\ncurl -s \"https://jwnabxbiekmempmocdge.supabase.co/rest/v1/plans?select=*\" \\\\\n  -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\" \\\\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\")",
+      "Bash(grep -r \"Servicio Suspendido\\\\|bg-gray-900\\\\|text-white\\\\|bg-red-600\" /d/desarrollo-web/multitenant-mistrajes/src --include=\"*.jsx\" --include=\"*.js\" --include=\"*.css\" 2>/dev/null | head -30)",
+      "Bash(grep -r \"text-white\\\\|bg-red\\\\|text-red\\\\|bg-gray\\\\|#ffffff\\\\|#ef4444\" /d/desarrollo-web/multitenant-mistrajes/src/components --include=\"*.jsx\" 2>/dev/null | grep -E \"\\(Notification|Banner|Suspension|WhatsApp\\)\" | head -20)",
+      "Bash(curl -s \"https://jwnabxbiekmempmocdge.supabase.co/rest/v1/tenant_suscripciones?select=*&limit=2\" \\\\\n  -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\" \\\\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\")"
     ]
   }
 }

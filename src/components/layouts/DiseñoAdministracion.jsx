@@ -64,116 +64,234 @@ const ModalSuspension = ({ tenant, signOut }) => (
     <div className="relative w-full max-w-lg">
       <div className="absolute -inset-4 bg-red-500/10 rounded-3xl blur-3xl pointer-events-none" />
       <div className="relative bg-[var(--bg-surface)] border border-red-500/30 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="bg-red-500/20 border-b border-red-500/30 px-6 py-4 flex items-center gap-3">
+
+        {/* Cabecera */}
+        <div className="bg-red-500/15 border-b border-red-500/25 px-6 py-4 flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0">
-            <Ban className="h-5 w-5 text-red-400" />
+            <Ban className="h-5 w-5 text-red-500" />
           </div>
           <div>
-            <p className="text-xs font-black text-red-300 uppercase tracking-widest">Servicio Suspendido</p>
-            <p className="text-[10px] text-red-400/70 font-bold uppercase tracking-widest mt-0.5">Mis Trajes · {tenant?.nombre_negocio}</p>
+            <p className="text-xs font-black text-red-500 uppercase tracking-widest">Servicio Suspendido</p>
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">
+              Mis Trajes · {tenant?.nombre_negocio}
+            </p>
           </div>
         </div>
-        <div className="p-8 text-center space-y-6">
+
+        {/* Cuerpo */}
+        <div className="p-8 text-center space-y-5">
           <div>
-            <h2 className="text-2xl font-black text-white tracking-tighter mb-2">Tu cuenta ha sido <span className="text-red-400">suspendida</span></h2>
-            <p className="text-sm text-white/50 leading-relaxed">El acceso a los módulos del sistema ha sido bloqueado temporalmente.</p>
+            <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter mb-2">
+              Tu cuenta ha sido <span className="text-red-500">suspendida</span>
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+              El acceso a los módulos del sistema ha sido bloqueado temporalmente.
+            </p>
           </div>
+
           {tenant?.motivo_suspension && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-left">
-              <p className="text-[10px] font-black text-red-300 uppercase tracking-widest mb-2">Motivo de la suspensión</p>
-              <p className="text-sm text-white/70 leading-relaxed">{tenant.motivo_suspension}</p>
+              <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-2">Motivo de la suspensión</p>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{tenant.motivo_suspension}</p>
             </div>
           )}
-          <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">¿Cómo reactivar tu cuenta?</p>
-            <ol className="text-xs text-white/60 text-left space-y-2 list-none">
-              <li className="flex gap-2"><span className="text-primary font-black">1.</span> Regulariza tu pago de suscripción</li>
-              <li className="flex gap-2"><span className="text-primary font-black">2.</span> Envía el comprobante a soporte</li>
-              <li className="flex gap-2"><span className="text-primary font-black">3.</span> Tu cuenta será reactivada en minutos</li>
+
+          <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-xl p-4 space-y-3">
+            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">¿Cómo reactivar tu cuenta?</p>
+            <ol className="text-xs text-[var(--text-secondary)] text-left space-y-2 list-none">
+              <li className="flex gap-2">
+                <span className="text-[var(--color-primary)] font-black shrink-0">1.</span>
+                Regulariza tu pago de suscripción
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-primary)] font-black shrink-0">2.</span>
+                Envía el comprobante a soporte
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-primary)] font-black shrink-0">3.</span>
+                Tu cuenta será reactivada en minutos
+              </li>
             </ol>
           </div>
+
           <div className="space-y-2">
-            <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Contáctanos</p>
-            <a href="https://wa.me/593982650929" target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 text-xs font-black uppercase tracking-widest transition-all">
+            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Contáctanos</p>
+            <a
+              href="https://wa.me/593982650929"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30 hover:bg-green-500/25 text-xs font-black uppercase tracking-widest transition-all"
+            >
               WhatsApp Soporte
             </a>
           </div>
-          <div className="border-t border-white/5 pt-4 space-y-2">
-            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">¿Quieres acceder con otra cuenta?</p>
+
+          <div className="border-t border-[var(--border-soft)] pt-4 space-y-2">
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+              ¿Quieres acceder con otra cuenta?
+            </p>
             <button
               onClick={signOut}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 text-white/50 border border-white/10 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/20 text-xs font-black uppercase tracking-widest transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border-soft)] hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 text-xs font-black uppercase tracking-widest transition-all"
             >
               <LogOut className="h-4 w-4" />
               Cerrar sesión
             </button>
-            <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Esta pantalla no puede cerrarse hasta reactivar el servicio</p>
+            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-60">
+              Esta pantalla no puede cerrarse hasta reactivar el servicio
+            </p>
           </div>
         </div>
+
       </div>
     </div>
   </div>
 );
 
 // ——— Modal Aviso del Sistema ———
+// Paleta semántica adaptada a ambos temas (evita tonos *-300 que son invisibles en claro)
+const AVISO_TEMAS = {
+  mantenimiento: {
+    glow:       'bg-amber-500/10',
+    border:     'border-amber-500/30',
+    headerBg:   'bg-amber-500/10 border-amber-500/20',
+    iconBg:     'bg-amber-500/15 border-amber-500/25',
+    iconColor:  'text-amber-500',
+    labelColor: 'text-amber-600 dark:text-amber-400',
+    numColor:   'text-amber-600 dark:text-amber-400',
+    label:      'Mantenimiento Programado',
+    Icon:       Wrench,
+  },
+  info: {
+    glow:       'bg-blue-500/10',
+    border:     'border-[var(--border-soft)]',
+    headerBg:   'bg-[var(--bg-surface-2)] border-[var(--border-soft)]',
+    iconBg:     'bg-blue-500/15 border-blue-500/20',
+    iconColor:  'text-blue-500',
+    labelColor: 'text-blue-600 dark:text-blue-400',
+    numColor:   'text-blue-600 dark:text-blue-400',
+    label:      'Aviso del Sistema',
+    Icon:       Info,
+  },
+  warning: {
+    glow:       'bg-amber-500/10',
+    border:     'border-amber-500/30',
+    headerBg:   'bg-amber-500/10 border-amber-500/20',
+    iconBg:     'bg-amber-500/15 border-amber-500/25',
+    iconColor:  'text-amber-500',
+    labelColor: 'text-amber-600 dark:text-amber-400',
+    numColor:   'text-amber-600 dark:text-amber-400',
+    label:      'Advertencia',
+    Icon:       Wrench,
+  },
+  success: {
+    glow:       'bg-green-500/10',
+    border:     'border-green-500/30',
+    headerBg:   'bg-green-500/10 border-green-500/20',
+    iconBg:     'bg-green-500/15 border-green-500/25',
+    iconColor:  'text-green-500',
+    labelColor: 'text-green-600 dark:text-green-400',
+    numColor:   'text-green-600 dark:text-green-400',
+    label:      'Aviso del Sistema',
+    Icon:       Info,
+  },
+  error: {
+    glow:       'bg-red-500/10',
+    border:     'border-red-500/30',
+    headerBg:   'bg-red-500/10 border-red-500/20',
+    iconBg:     'bg-red-500/15 border-red-500/25',
+    iconColor:  'text-red-500',
+    labelColor: 'text-red-600 dark:text-red-400',
+    numColor:   'text-red-500',
+    label:      'Aviso Urgente',
+    Icon:       Ban,
+  },
+};
+
 const ModalAviso = ({ aviso, onCerrar }) => {
   const countdown = useCountdown(aviso.tipo === 'mantenimiento' ? aviso.fecha_fin : null);
-  const esMant = aviso.tipo === 'mantenimiento';
+  const tema = AVISO_TEMAS[aviso.tipo] || AVISO_TEMAS.info;
+  const { Icon } = tema;
+
   return (
-    <div className={`fixed inset-0 z-[190] flex items-center justify-center p-4 ${esMant ? 'bg-[var(--bg-page)]/90 backdrop-blur-md' : 'bg-[var(--bg-page)]/70 backdrop-blur-sm'}`}>
-      <div className="relative w-full max-w-md">
-        <div className={`absolute -inset-4 rounded-3xl blur-3xl pointer-events-none ${esMant ? 'bg-amber-500/10' : 'bg-blue-500/10'}`} />
-        <div className={`relative bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-2xl border ${esMant ? 'border-amber-500/30' : 'border-[var(--border-soft)]'}`}>
-          <div className={`px-6 py-4 border-b flex items-center gap-3 ${esMant ? 'bg-amber-500/10 border-amber-500/20' : 'bg-[var(--bg-surface-2)] border-[var(--border-soft)]'}`}>
-            <div className={`h-9 w-9 rounded-xl flex items-center justify-center border ${esMant ? 'bg-amber-500/20 border-amber-500/30' : 'bg-blue-500/20 border-blue-500/20'}`}>
-              {esMant ? <Wrench className="h-4 w-4 text-amber-400" /> : <Info className="h-4 w-4 text-blue-400" />}
+    <div className={`fixed inset-0 z-[190] flex items-center justify-center p-4 bg-[var(--bg-page)]/80 backdrop-blur-sm`}>
+      <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+
+        {/* Halo de color */}
+        <div className={`absolute -inset-4 rounded-3xl blur-3xl pointer-events-none ${tema.glow}`} />
+
+        <div className={`relative bg-[var(--bg-surface)] rounded-2xl overflow-hidden shadow-2xl border ${tema.border}`}>
+
+          {/* Cabecera */}
+          <div className={`px-5 py-4 border-b flex items-center gap-3 ${tema.headerBg}`}>
+            <div className={`h-9 w-9 rounded-xl flex items-center justify-center border shrink-0 ${tema.iconBg}`}>
+              <Icon className={`h-4 w-4 ${tema.iconColor}`} />
             </div>
-            <div className="flex-1">
-              <p className={`text-[10px] font-black uppercase tracking-widest ${esMant ? 'text-amber-300' : 'text-blue-300'}`}>
-                {esMant ? 'Mantenimiento Programado' : 'Aviso del Sistema'}
+            <div className="flex-1 min-w-0">
+              <p className={`text-[10px] font-black uppercase tracking-widest ${tema.labelColor}`}>
+                {tema.label}
               </p>
-              <p className="text-xs font-black text-[var(--text-primary)] mt-0.5">{aviso.titulo}</p>
+              <p className="text-sm font-black text-[var(--text-primary)] mt-0.5 leading-tight">{aviso.titulo}</p>
             </div>
             {aviso.permite_cerrar && (
-              <button onClick={onCerrar} className="p-1.5 rounded-lg hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              <button
+                onClick={onCerrar}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-3)] transition-colors shrink-0"
+              >
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
+
+          {/* Cuerpo */}
           <div className="p-6 space-y-4">
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{aviso.mensaje}</p>
-            {esMant && countdown && !countdown.done && (
+
+            {/* Countdown para mantenimiento */}
+            {aviso.tipo === 'mantenimiento' && countdown && !countdown.done && (
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                <p className="text-[10px] font-black text-amber-300/60 uppercase tracking-widest mb-3 text-center">
-                   <Clock className="inline h-3 w-3 mr-1" />Tiempo estimado restante
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-3 text-center flex items-center justify-center gap-1.5">
+                  <Clock className="h-3 w-3" /> Tiempo estimado restante
                 </p>
                 <div className="flex justify-center gap-4">
                   {[['h', countdown.h], ['m', countdown.m], ['s', countdown.s]].map(([label, val]) => (
                     <div key={label} className="text-center">
-                      <div className="text-3xl font-black text-amber-300 tabular-nums w-14 text-center">{String(val).padStart(2, '0')}</div>
-                      <div className="text-[9px] font-black text-amber-300/40 uppercase tracking-widest mt-1">{label}</div>
+                      <div className={`text-3xl font-black tabular-nums w-14 text-center ${tema.numColor}`}>
+                        {String(val).padStart(2, '0')}
+                      </div>
+                      <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">{label}</div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {esMant && countdown?.done && (
+
+            {/* Mantenimiento concluido */}
+            {aviso.tipo === 'mantenimiento' && countdown?.done && (
               <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
-                <p className="text-xs font-black text-green-300">✅ El mantenimiento debería haber concluido. Recarga la página.</p>
+                <p className="text-xs font-black text-green-600 dark:text-green-400">
+                  ✅ El mantenimiento debería haber concluido. Recarga la página.
+                </p>
               </div>
             )}
+
             {aviso.fecha_inicio && (
               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest text-center">
                 Inicio programado: {new Date(aviso.fecha_inicio).toLocaleString('es-EC')}
               </p>
             )}
+
             {aviso.permite_cerrar ? (
-              <button onClick={onCerrar} className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border-soft)] hover:bg-[var(--bg-surface-3)] hover:text-[var(--text-primary)] transition-all">
+              <button
+                onClick={onCerrar}
+                className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border-soft)] hover:bg-[var(--bg-surface-3)] hover:text-[var(--text-primary)] transition-all"
+              >
                 Entendido, cerrar
               </button>
             ) : (
-              <p className="text-center text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Este aviso no puede cerrarse</p>
+              <p className="text-center text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+                Este aviso no puede cerrarse
+              </p>
             )}
           </div>
         </div>

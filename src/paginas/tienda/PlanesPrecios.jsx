@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   Check, X, Zap, ArrowRight, ShieldCheck, HeadphonesIcon, Infinity, Star,
+  Crown, Rocket,
 } from 'lucide-react';
 
 // ── Datos de planes (sincronizados con el SQL insertado en Supabase) ──────────
