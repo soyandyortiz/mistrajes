@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /d/desarrollo-web/multitenant-mistrajes/src/paginas/tienda/*.jsx)"
+    ]
+  }
+}

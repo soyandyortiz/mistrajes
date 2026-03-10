@@ -23,6 +23,8 @@ import TiendaPublica from "./paginas/tienda/TiendaPublica";
 import FlujoReservaWeb from "./paginas/tienda/FlujoReservaWeb";
 import Tutoriales from "./paginas/tienda/Tutoriales";
 import Caracteristicas from "./paginas/tienda/Caracteristicas";
+import PlanesPrecios from "./paginas/tienda/PlanesPrecios";
+import PagoPublico from "./paginas/tienda/PagoPublico";
 import TerminosCondiciones from "./paginas/tienda/TerminosCondiciones";
 import PoliticaDatos from "./paginas/tienda/PoliticaDatos";
 import PublicNavbar from "./components/navigation/PublicNavbar";
@@ -268,6 +270,8 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route index element={<Landing />} />
             <Route path="caracteristicas" element={<Caracteristicas />} />
+            <Route path="precios" element={<PlanesPrecios />} />
+            <Route path="pago-plan" element={<PagoPublico />} />
             <Route path="terminos-condiciones" element={<TerminosCondiciones />} />
             <Route path="politica-datos" element={<PoliticaDatos />} />
           </Route>
