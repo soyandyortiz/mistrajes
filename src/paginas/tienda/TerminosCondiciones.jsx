@@ -2,7 +2,7 @@ import { Shield, FileText, Info } from 'lucide-react';
 
 const TerminosCondiciones = () => {
   return (
-    <div className="pt-40 pb-24 px-6 min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
+    <div className="pt-40 pb-24 px-6 min-h-screen text-[var(--text-primary)]">
       <div className="max-w-4xl mx-auto space-y-12">
         <header className="space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--color-primary-dim)] border border-[var(--border-soft)] text-[10px] font-black uppercase tracking-[0.4em] text-[var(--color-primary)]">

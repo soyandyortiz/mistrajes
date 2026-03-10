@@ -419,7 +419,6 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen text-[var(--text-primary)] selection:bg-[var(--color-primary-dim)] relative">
-      <div className="absolute inset-0 bg-[var(--bg-page)] -z-10" />
 
       {/* ══════════════════════════════════════════
           HERO — Dos columnas iguales, primer pantallazo

@@ -88,7 +88,7 @@ const Tutoriales = () => {
   };
 
   return (
-    <div className="pt-20 min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] flex flex-col lg:flex-row">
+    <div className="pt-20 min-h-screen text-[var(--text-primary)] flex flex-col lg:flex-row">
       
       {/* Mobile Header Toggle */}
       <div className="lg:hidden fixed bottom-6 right-6 z-[60]">

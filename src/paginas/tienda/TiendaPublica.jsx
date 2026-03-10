@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useTenantStore } from '../../stores/tenantStore';
 import { ShoppingBag, Search, Filter, Star, Loader2, ArrowRight, Phone, MapPin, X, Mail, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const TiendaPublica = () => {
   const { tenant, loading: tenantLoading } = useTenantStore();
@@ -13,6 +14,9 @@ const TiendaPublica = () => {
   const [activeCategory, setActiveCategory] = useState(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [sortOrder, setSortOrder] = useState('reciente');
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   useEffect(() => {
     const fetchCatalogo = async () => {
@@ -99,11 +103,23 @@ const TiendaPublica = () => {
     }
   }, [tenant, tenantLoading]);
 
-  const filtrados = productos.filter(p => {
+  const SORT_LABELS = {
+    reciente:    'Recién publicados',
+    precio_asc:  'Precio: menor a mayor',
+    precio_desc: 'Precio: mayor a menor',
+  };
+
+  const filtrados = [...productos]
+    .filter(p => {
       const matchSearch = p.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchCat = activeCategory ? p.categorias_ids.includes(activeCategory) : true;
       return matchSearch && matchCat;
-  });
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'precio_asc')  return (a.precio_unitario || 0) - (b.precio_unitario || 0);
+      if (sortOrder === 'precio_desc') return (b.precio_unitario || 0) - (a.precio_unitario || 0);
+      return 0; // 'reciente' ya viene ordenado por created_at desc desde la query
+    });
 
   const getUrl = (path, params = '') => {
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -133,7 +149,7 @@ const TiendaPublica = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] relative flex flex-col pt-16">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] relative flex flex-col pt-16" onClick={() => { setShowSortMenu(false); setOpenDropdown(null); }}>
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[var(--color-primary-dim)] via-[var(--bg-page)] to-[var(--bg-page)]"></div>
       
       {/* Navbar Tienda */}
@@ -168,7 +184,8 @@ const TiendaPublica = () => {
                </button>
            </div>
 
-           <div className="flex items-center gap-4 relative z-50">
+           <div className="flex items-center gap-3 relative z-50">
+              <ThemeToggle size="sm" />
               <Link to={getUrl('/reserva-web')} className="relative p-2.5 bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] border border-[var(--border-soft)] rounded-xl transition-colors group">
                  <ShoppingBag className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" />
               </Link>
@@ -210,49 +227,82 @@ const TiendaPublica = () => {
 
          {/* Categorías Integradas debajo del Buscador */}
          <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
-            <button 
-               onClick={() => setActiveCategory(null)} 
-               className={`px-4 py-2 rounded-full border transition-all duration-300 ${!activeCategory ? 'bg-[var(--color-primary-dim)] text-[var(--text-primary)] border-[var(--color-primary)] shadow-[var(--color-primary-glow)]' : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border-transparent hover:bg-[var(--bg-surface-3)] hover:text-[var(--text-primary)]'}`}
+            <button
+               onClick={() => setActiveCategory(null)}
+               className={`px-4 py-2 rounded-full border transition-all duration-300 ${!activeCategory ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-soft)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
             >
                Todo el Catálogo
             </button>
-            {categoriasPrincipales.map(cat => (
-               <div key={cat.id} className="relative group/cat">
-                  <button 
-                     onClick={() => setActiveCategory(cat.id)}
-                     className={`px-4 py-2 rounded-full border transition-all duration-300 ${activeCategory === cat.id ? 'bg-[var(--color-primary-dim)] text-[var(--text-primary)] border-[var(--color-primary)] shadow-[var(--color-primary-glow)]' : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] border-transparent hover:bg-[var(--bg-surface-3)] hover:text-[var(--text-primary)]'}`}
+            {categoriasPrincipales.map(cat => {
+               const subcats = categorias.filter(sub => sub.padre_id === cat.id);
+               const isActive = activeCategory === cat.id || subcats.some(s => s.id === activeCategory);
+               return (
+                  <div
+                     key={cat.id}
+                     className="relative"
+                     onMouseEnter={() => subcats.length > 0 && setOpenDropdown(cat.id)}
+                     onMouseLeave={() => setOpenDropdown(null)}
+                     onClick={e => e.stopPropagation()}
                   >
-                     {cat.nombre}
-                  </button>
-                  {/* Dropdown de Subcategorías */}
-                  {categorias.filter(sub => sub.padre_id === cat.id).length > 0 && (
-                     <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-xl py-2 px-1 min-w-[200px] opacity-0 invisible group-hover/cat:opacity-100 group-hover/cat:visible transition-all shadow-2xl z-50 before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3">
-                        {categorias.filter(sub => sub.padre_id === cat.id).map(sub => (
-                           <button 
-                              key={sub.id}
-                              onClick={(e) => { setActiveCategory(sub.id); e.stopPropagation(); }}
-                              className={`w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface-3)] rounded-lg transition-colors flex items-center justify-between ${activeCategory === sub.id ? 'text-[var(--color-primary)] bg-[var(--color-primary-dim)]' : 'text-[var(--text-secondary)]'}`}
-                           >
-                              <span>{sub.nombre}</span>
-                              {activeCategory === sub.id && <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></div>}
-                           </button>
-                        ))}
-                     </div>
-                  )}
-               </div>
-            ))}
+                     <button
+                        onClick={() => { setActiveCategory(cat.id); setOpenDropdown(null); }}
+                        className={`px-4 py-2 rounded-full border transition-all duration-300 ${isActive ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-soft)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
+                     >
+                        {cat.nombre}
+                     </button>
+                     {/* Dropdown de Subcategorías — controlado por estado, sin brecha de hover */}
+                     {subcats.length > 0 && openDropdown === cat.id && (
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-1 z-50">
+                           <div className="bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-xl py-2 px-1 min-w-[200px] shadow-2xl">
+                              {subcats.map(sub => (
+                                 <button
+                                    key={sub.id}
+                                    onClick={() => { setActiveCategory(sub.id); setOpenDropdown(null); }}
+                                    className={`w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface-2)] rounded-lg transition-colors flex items-center justify-between text-[11px] font-bold uppercase tracking-widest ${activeCategory === sub.id ? 'text-[var(--color-primary)] bg-[var(--color-primary-dim)]' : 'text-[var(--text-secondary)]'}`}
+                                 >
+                                    <span>{sub.nombre}</span>
+                                    {activeCategory === sub.id && <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]"></div>}
+                                 </button>
+                              ))}
+                           </div>
+                        </div>
+                     )}
+                  </div>
+               );
+            })}
          </div>
       </header>
 
-      {/* Resultados Info */}
+      {/* Resultados Info + Ordenamiento */}
       <div className="relative z-10 max-w-7xl mx-auto w-full px-6 lg:px-12 pb-4">
          <div className="flex justify-between items-center border-b border-[var(--border-soft)] pb-4">
              <h2 className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">
-                 Mostrando {filtrados.length} resultados
+                 {filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}
              </h2>
-             <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] px-4 py-2 rounded-lg border border-[var(--border-soft)] group">
-                 <Filter className="h-3 w-3 text-[var(--text-muted)] group-hover:text-[var(--color-primary)] transition-colors" /> <span className="hidden sm:block">Filtros Avanzados</span><span className="sm:hidden">Filtros</span>
-             </button>
+             <div className="relative" onClick={e => e.stopPropagation()}>
+               <button
+                 onClick={() => setShowSortMenu(prev => !prev)}
+                 className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors px-4 py-2 rounded-lg border group ${showSortMenu ? 'bg-[var(--color-primary-dim)] border-[var(--color-primary)] text-[var(--color-primary)]' : 'bg-[var(--bg-surface)] border-[var(--border-soft)] text-[var(--text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'}`}
+               >
+                 <Filter className="h-3 w-3" />
+                 <span className="hidden sm:block">{SORT_LABELS[sortOrder]}</span>
+                 <span className="sm:hidden">Ordenar</span>
+               </button>
+               {showSortMenu && (
+                 <div className="absolute right-0 top-full mt-1 bg-[var(--bg-surface)] border border-[var(--border-medium)] rounded-xl py-2 px-1 min-w-[220px] shadow-2xl z-50">
+                   {Object.entries(SORT_LABELS).map(([key, label]) => (
+                     <button
+                       key={key}
+                       onClick={() => { setSortOrder(key); setShowSortMenu(false); }}
+                       className={`w-full text-left px-4 py-2.5 rounded-lg transition-colors text-[11px] font-bold uppercase tracking-widest flex items-center justify-between ${sortOrder === key ? 'bg-[var(--color-primary-dim)] text-[var(--color-primary)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]'}`}
+                     >
+                       {label}
+                       {sortOrder === key && <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" />}
+                     </button>
+                   ))}
+                 </div>
+               )}
+             </div>
          </div>
       </div>
 
@@ -278,10 +328,10 @@ const TiendaPublica = () => {
                             ) : (
                                 <Star className="h-16 w-16 md:h-24 md:w-24 text-[var(--text-primary)] p-4 md:p-6 opacity-5 group-hover:scale-110 transition-transform duration-700" />
                             )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-page)]/80 to-transparent"></div>
-                            
+                            <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-page)] to-transparent opacity-70"></div>
+
                             <div className="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4 flex justify-between items-end">
-                                <span className="px-2 py-1 md:px-3 md:py-1 rounded-full bg-black/60 backdrop-blur-md border border-[var(--border-soft)] text-[9px] md:text-[10px] font-black tracking-widest uppercase shadow-xl text-[var(--color-primary)] block w-fit">
+                                <span className="px-2 py-1 md:px-3 md:py-1 rounded-full bg-[var(--bg-surface)]/95 backdrop-blur-md border border-[var(--border-soft)] text-[9px] md:text-[10px] font-black tracking-widest uppercase shadow-xl text-[var(--color-primary)] block w-fit">
                                   ${prod.precio_unitario}/día
                                 </span>
                             </div>
@@ -291,7 +341,7 @@ const TiendaPublica = () => {
                             <p className="hidden md:block text-xs text-[var(--text-muted)] line-clamp-2 leading-relaxed flex-1 mb-6">{prod.descripcion || 'Sin descripción disponible.'}</p>
                             
                             <div className="relative z-20 mt-auto">
-                                <Link to={getUrl('/reserva-web', `producto=${prod.id}`)} className="flex items-center justify-center w-full py-2.5 md:py-3 rounded-xl bg-[var(--bg-surface-2)] text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--color-primary)] hover:text-white transition-all group/btn border border-[var(--border-soft)] hover:border-[var(--color-primary)] relative pointer-events-auto cursor-pointer shadow-lg shadow-[var(--shadow-sm)]">
+                                <Link to={getUrl('/reserva-web', `producto=${prod.id}`)} className="flex items-center justify-center w-full py-2.5 md:py-3 rounded-xl bg-[var(--bg-surface-2)] text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-[var(--color-primary)] hover:text-white transition-all group/btn border border-[var(--border-medium)] hover:border-[var(--color-primary)] text-[var(--text-secondary)] hover:text-white relative pointer-events-auto cursor-pointer">
                                     Reservar <span className="hidden md:inline ml-1">Ahora</span> <ArrowRight className="h-3 w-3 ml-1.5 md:ml-2 group-hover/btn:translate-x-1 transition-transform" />
                                 </Link>
                             </div>
@@ -408,7 +458,7 @@ const TiendaPublica = () => {
       )}
       
       {/* Footer Minimalista */}
-      <footer className="relative z-10 border-t border-[var(--border-soft)] py-8 text-center bg-black/20">
+      <footer className="relative z-10 border-t border-[var(--border-soft)] py-8 text-center bg-[var(--bg-surface-2)]/60">
          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">
             {tenant?.configuracion_tienda?.nombre_negocio || tenant?.nombre_negocio} • Desarrollado por <a href="https://guambraweb.com/" target="_blank" rel="noreferrer" className="text-[var(--color-primary)]/70 hover:text-[var(--color-primary)] transition-colors">GuambraWeb</a>
          </p>

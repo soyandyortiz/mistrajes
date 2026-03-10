@@ -45,7 +45,7 @@ import ConfiguracionesGenerales from "./paginas/administracion/Operaciones/Confi
 
 // Capa de Layout para Páginas Públicas (Marketing)
 const PublicLayout = () => (
-  <div className="flex flex-col min-h-screen bg-[var(--bg-page)] transition-colors duration-500">
+  <div className="flex flex-col min-h-screen transition-colors duration-500">
     <PublicNavbar />
     <main className="flex-1">
       <Outlet />
@@ -57,7 +57,7 @@ const PublicLayout = () => (
 
 // Layout reducido para Tutoriales (sin footer completo, solo copyright)
 const TutorialesLayout = () => (
-  <div className="flex flex-col min-h-screen bg-[var(--bg-page)] transition-colors duration-500">
+  <div className="flex flex-col min-h-screen transition-colors duration-500">
     <PublicNavbar />
     <main className="flex-1">
       <Outlet />

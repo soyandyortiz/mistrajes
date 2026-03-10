@@ -148,18 +148,39 @@ export default function Piezas() {
     });
   };
 
-  const addFoto = (e) => {
-    const files = Array.from(e.target.files);
-    if (formData.fotos.length + files.length > 5) return toast.error('Máximo 5 imágenes permitidas');
-    
-    const newFotos = files.map(f => ({
-      file: f,
-      url: URL.createObjectURL(f),
-      name: f.name,
-      isNew: true,
-    }));
-    setFormData(prev => ({ ...prev, fotos: [...prev.fotos, ...newFotos] }));
-    // Reset input para permitir subir el mismo archivo de nuevo
+  /** Convierte cualquier imagen a WebP vía Canvas API (sin librerías) */
+  const convertirAWebP = (file, calidad = 0.85) => new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.toBlob(
+        (blob) => blob
+          ? resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }))
+          : reject(new Error('No se pudo convertir la imagen')),
+        'image/webp',
+        calidad
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Imagen inválida')); };
+    img.src = objectUrl;
+  });
+
+  const addFoto = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (formData.fotos.length >= 1) return toast.error('Solo se permite 1 foto por elemento/pieza');
+    if (file.size > 5 * 1024 * 1024) return toast.error('La imagen supera el límite de 5 MB');
+    try {
+      const webp = await convertirAWebP(file);
+      setFormData(prev => ({ ...prev, fotos: [{ file: webp, url: URL.createObjectURL(webp), name: webp.name, isNew: true }] }));
+    } catch {
+      toast.error('No se pudo procesar la imagen');
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -562,11 +583,11 @@ export default function Piezas() {
 
                {/* 3. Fotos */}
                <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-[var(--color-primary)] mb-6 border-b border-[var(--color-primary)]/20 pb-4">3. Galería (Máx 5)</h3>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-[var(--color-primary)] mb-6 border-b border-[var(--color-primary)]/20 pb-4">3. Foto del Elemento (Máx 1)</h3>
+
+                  <div className="flex gap-4 items-start">
                      {formData.fotos.map((f, idx) => (
-                         <div key={idx} className="aspect-square bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-2xl relative group overflow-hidden">
+                         <div key={idx} className="w-32 h-32 bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-2xl relative group overflow-hidden flex-shrink-0">
                              <img src={f.url} alt="" className="w-full h-full object-cover" />
                              {f.isNew && (
                                <div className="absolute bottom-1 left-1 bg-[var(--color-primary)]/80 text-[8px] font-black text-white px-1.5 py-0.5 rounded uppercase tracking-wide">Nueva</div>
@@ -574,16 +595,16 @@ export default function Piezas() {
                              <button type="button" onClick={() => removeFoto(idx)} className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0"><X className="w-3 h-3"/></button>
                          </div>
                      ))}
-                     
-                     {formData.fotos.length < 5 && (
-                         <div onClick={() => fileInputRef.current?.click()} className="aspect-square bg-[var(--bg-surface-2)] border-2 border-dashed border-[var(--border-soft)] rounded-2xl flex flex-col items-center justify-center text-[var(--text-muted)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all cursor-pointer">
+
+                     {formData.fotos.length < 1 && (
+                         <div onClick={() => fileInputRef.current?.click()} className="w-32 h-32 bg-[var(--bg-surface-2)] border-2 border-dashed border-[var(--border-soft)] rounded-2xl flex flex-col items-center justify-center text-[var(--text-muted)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all cursor-pointer flex-shrink-0">
                              <Upload className="w-6 h-6 mb-2"/>
-                             <span className="text-[9px] font-black uppercase tracking-widest text-center px-4">Subir Foto</span>
+                             <span className="text-[9px] font-black uppercase tracking-widest text-center px-2">Subir Foto</span>
                          </div>
                      )}
-                     <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={addFoto}/>
+                     <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={addFoto}/>
                   </div>
-                  <p className="text-[10px] text-[var(--text-muted)] mt-3">Las imágenes se subirán al guardar la ficha. Formatos: JPG, PNG, WEBP.</p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-3">Solo se permite <strong>1 foto</strong> por elemento. Tamaño máximo: <strong>5 MB</strong>. Formatos: JPG, PNG, WEBP.</p>
                </div>
 
                {/* 4. Tallas y Stock */}
