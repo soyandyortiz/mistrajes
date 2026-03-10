@@ -121,7 +121,7 @@ const PagarPlan = () => {
             <CheckCircle2 className="h-10 w-10 text-emerald-400" />
           </div>
           <h2 className="text-2xl font-black tracking-tighter text-[var(--text-primary)]">¡Comprobante registrado!</h2>
-          <p className="text-sm text-gray-400 leading-relaxed">
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
             Hemos registrado tu intención de pago. Tu plan será activado por el equipo de Mis Trajes en menos de <strong className="text-[var(--text-primary)]">24 horas hábiles</strong> después de verificar el comprobante.
           </p>
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
@@ -171,7 +171,7 @@ const PagarPlan = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-2xl font-black tracking-tighter text-[var(--text-primary)]">{plan.nombre}</h3>
-                  <p className="text-xs text-gray-400 mt-1">{plan.descripcion}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">{plan.descripcion}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-3xl font-black tracking-tighter text-[var(--text-primary)]">${plan.precio_mensual}</p>
@@ -216,7 +216,7 @@ const PagarPlan = () => {
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">${plan.precio_mensual} × {meses} mes{meses > 1 ? 'es' : ''}</span>
+                <span className="text-[var(--text-secondary)]">${plan.precio_mensual} × {meses} mes{meses > 1 ? 'es' : ''}</span>
                 <span className="text-[var(--text-primary)] font-bold">${precioBase.toFixed(2)}</span>
               </div>
 
@@ -255,11 +255,11 @@ const PagarPlan = () => {
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Cuenta:</span>
-                  <span className="text-white font-bold tracking-wide">2207862136</span>
+                  <span className="text-[var(--text-secondary)]">Cuenta:</span>
+                  <span className="text-[var(--text-primary)] font-bold tracking-wide">2207862136</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Titular:</span>
+                  <span className="text-[var(--text-secondary)]">Titular:</span>
                   <span className="text-[var(--text-primary)] font-bold">Andy J. Ortiz</span>
                 </div>
               </div>
@@ -301,7 +301,7 @@ const PagarPlan = () => {
                     <MessageCircle className="h-4 w-4" />
                     +593 982650929
                   </a>
-                  <p className="text-[10px] text-white/40 font-medium mt-3">
+                  <p className="text-[10px] text-[var(--text-muted)] font-medium mt-3">
                     Tu plan será activado en menos de 24 horas hábiles.
                   </p>
                 </div>
@@ -334,7 +334,7 @@ const PagarPlan = () => {
             )}
           </button>
 
-          <p className="text-[10px] text-white/30 text-center font-medium">
+          <p className="text-[10px] text-[var(--text-muted)] text-center font-medium">
             Al hacer clic confirmas que ya realizaste la transferencia y enviaste el comprobante por WhatsApp.
           </p>
         </div>

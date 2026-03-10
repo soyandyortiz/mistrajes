@@ -239,11 +239,6 @@ Esto archiva el balance y bloquea adición o edición retroactiva para todos los
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-       <div className="mb-8">
-        <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2 flex items-center gap-3"><Wallet className="w-8 h-8 text-primary"/> Arqueo de Caja</h1>
-        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Validación de Efectivo y Saldos</p>
-       </div>
-       
        <ModuleNavbar currentTab={currentTab} setTab={setTab} />
 
        {/* VISTA DEL DÍA */}

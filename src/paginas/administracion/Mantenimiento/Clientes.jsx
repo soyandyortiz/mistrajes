@@ -348,15 +348,6 @@ export default function Clientes() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2">
-          Cartera de Clientes
-        </h1>
-        <p className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">
-          Personas y Empresas
-        </p>
-      </div>
-
       <ModuleNavbar
         currentTab={currentTab}
         setTab={(t) => {

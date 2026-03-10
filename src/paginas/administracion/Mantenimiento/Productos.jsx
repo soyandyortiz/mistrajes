@@ -520,11 +520,6 @@ export default function Productos() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-       <div className="mb-8">
-           <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2">Inventario de Trajes</h1>
-           <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Gestión de Catálogo y Relaciones</p>
-       </div>
-       
        <ModuleNavbar currentTab={currentTab} setTab={(t) => { if(t === 'nuevo') setFormData(initialForm); setTab(t); }} />
 
        {/* VISTA LISTADO */}
@@ -680,7 +675,7 @@ export default function Productos() {
                      {formData.fotos.map((f, idx) => (
                          <div key={idx} className="aspect-square bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-2xl relative group overflow-hidden">
                              <img src={f.url} alt="" className="w-full h-full object-cover" />
-                             {f.isNew && <div className="absolute bottom-1 left-1 bg-primary/80 text-[8px] font-black text-black px-1.5 py-0.5 rounded uppercase tracking-wide">Nueva</div>}
+                             {f.isNew && <div className="absolute bottom-1 left-1 bg-primary/80 text-[8px] font-black text-[var(--text-inverse)] px-1.5 py-0.5 rounded uppercase tracking-wide">Nueva</div>}
                              <button type="button" onClick={() => removeFoto(idx)} className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-[var(--text-primary)] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0"><X className="w-3 h-3"/></button>
                          </div>
                      ))}

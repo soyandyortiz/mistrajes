@@ -201,7 +201,7 @@ const TiendaConfiguracion = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Descripción Corta del Negocio
               </label>
                <textarea
@@ -227,7 +227,7 @@ const TiendaConfiguracion = () => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Teléfono
               </label>
               <input
@@ -253,7 +253,7 @@ const TiendaConfiguracion = () => {
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Correo Electrónico Comercial
               </label>
               <div className="relative">
@@ -279,7 +279,7 @@ const TiendaConfiguracion = () => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Dirección Exacta
               </label>
               <input
@@ -292,7 +292,7 @@ const TiendaConfiguracion = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Ciudad
               </label>
               <input
@@ -305,7 +305,7 @@ const TiendaConfiguracion = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Provincia
               </label>
               <input
@@ -345,7 +345,7 @@ const TiendaConfiguracion = () => {
           </h3>
           <div className="grid grid-cols-1 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Facebook URL
               </label>
               <input
@@ -358,7 +358,7 @@ const TiendaConfiguracion = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 Instagram URL
               </label>
               <input
@@ -371,7 +371,7 @@ const TiendaConfiguracion = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/70 uppercase">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase">
                 TikTok URL
               </label>
               <input

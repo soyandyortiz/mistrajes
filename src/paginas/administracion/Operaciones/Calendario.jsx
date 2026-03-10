@@ -120,12 +120,7 @@ export default function Calendario() {
   return (
     <div className="animate-in fade-in duration-500 pb-20 h-[calc(100vh-100px)] min-h-[800px] flex flex-col">
        
-       <div className="mb-6 flex justify-between items-end shrink-0">
-           <div>
-               <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2 flex items-center gap-3"><CalendarIcon className="w-8 h-8 text-primary"/> Radar Logístico</h1>
-               <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-40">Semaforización y Despliegue Diario</p>
-           </div>
-           
+       <div className="mb-6 flex justify-end shrink-0">
            {/* Controles del Navegador Mes */}
            <div className="flex bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-1 rounded-xl">
                <button onClick={prevMonth} className="px-3 hover:bg-[var(--bg-surface-3)] rounded-lg transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"><ChevronLeft className="w-5 h-5"/></button>

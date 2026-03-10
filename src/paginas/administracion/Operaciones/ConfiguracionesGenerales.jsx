@@ -138,23 +138,11 @@ const ConfiguracionesGenerales = () => {
         </div>
       )}
 
-      {/* Header Info */}
-      <div className="glass-card p-6">
-        <div>
-          <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter">
-            Configuraciones Generales
-          </h2>
-          <p className="text-xs text-[var(--text-muted)] mt-1 max-w-2xl">
-            Gestiona la identidad visual global de tu empresa. Estos logotipos reemplazarán al nombre de texto y al icono genérico del sistema en el menú lateral y en tu tienda online.
-          </p>
-        </div>
-      </div>
-
       <form onSubmit={handleSave} className="space-y-6">
         
         {/* Identidad Visual */}
         <div className="glass-card p-6 space-y-6">
-          <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 border-b border-white/10 pb-4">
+          <h3 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2 border-b border-[var(--border-soft)] pb-4">
             <ImageIcon className="h-4 w-4 text-primary" />
             Identidad Visual
           </h3>
@@ -164,11 +152,11 @@ const ConfiguracionesGenerales = () => {
              {/* Logo Principal */}
              <div className="space-y-4">
                  <div>
-                   <label className="text-xs font-bold text-white/70 uppercase flex items-center gap-2 mb-1">
-                      <Store className="h-4 w-4 text-white/40" />
+                   <label className="text-xs font-bold text-[var(--text-secondary)] uppercase flex items-center gap-2 mb-1">
+                      <Store className="h-4 w-4 text-[var(--text-muted)]" />
                       Logotipo de la Empresa
                    </label>
-                   <p className="text-[10px] text-white/40 mb-3">Se mostrará en el menú del sistema y en la cabecera de la tienda online (Recomendado apaisado/rectangular). <span className="font-bold text-white/60">Máx. 5MB</span></p>
+                   <p className="text-[10px] text-[var(--text-muted)] mb-3">Se mostrará en el menú del sistema y en la cabecera de la tienda online (Recomendado apaisado/rectangular). <span className="font-bold text-[var(--text-secondary)]">Máx. 5MB</span></p>
                 </div>
                 
                  <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[var(--border-soft)] rounded-2xl bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] transition-colors relative group">
@@ -192,11 +180,11 @@ const ConfiguracionesGenerales = () => {
              {/* Favicon / Icono Pequeño */}
              <div className="space-y-4">
                 <div>
-                   <label className="text-xs font-bold text-white/70 uppercase flex items-center gap-2 mb-1">
-                      <MonitorPlay className="h-4 w-4 text-white/40" />
+                   <label className="text-xs font-bold text-[var(--text-secondary)] uppercase flex items-center gap-2 mb-1">
+                      <MonitorPlay className="h-4 w-4 text-[var(--text-muted)]" />
                       Ícono del Negocio (Favicon)
                    </label>
-                   <p className="text-[10px] text-white/40 mb-3">Se mostrará en las pestañas del navegador junto al título de tu web (Debe ser cuadrado). <span className="font-bold text-white/60">Máx. 5MB</span></p>
+                   <p className="text-[10px] text-[var(--text-muted)] mb-3">Se mostrará en las pestañas del navegador junto al título de tu web (Debe ser cuadrado). <span className="font-bold text-[var(--text-secondary)]">Máx. 5MB</span></p>
                 </div>
                 
                  <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[var(--border-soft)] rounded-2xl bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] transition-colors relative group">

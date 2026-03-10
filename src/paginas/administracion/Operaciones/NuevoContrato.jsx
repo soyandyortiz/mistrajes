@@ -697,11 +697,11 @@ export default function NuevoContrato({ onVolver }) {
                            <div>
                               <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-4 block">Tipo de Entrega <span className="text-red-400">*</span></label>
                               <div className="grid grid-cols-2 gap-4">
-                                  <button onClick={() => setFechas({...fechas, tipo_entrega: 'Presencial'})} className={`h-24 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all group ${fechas.tipo_entrega === 'Presencial' ? 'bg-primary/10 border-primary text-primary shadow-[0_0_30px_-5px_var(--tw-shadow-color)] shadow-primary/30' : 'bg-black/40 border-[var(--border-soft)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-2)] hover:text-white'}`}>
+                                  <button onClick={() => setFechas({...fechas, tipo_entrega: 'Presencial'})} className={`h-24 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all group ${fechas.tipo_entrega === 'Presencial' ? 'bg-primary/10 border-primary text-primary shadow-[0_0_30px_-5px_var(--tw-shadow-color)] shadow-primary/30' : 'bg-[var(--bg-surface-2)] border-[var(--border-soft)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-3)] hover:text-[var(--text-primary)]'}`}>
                                       <User className="w-6 h-6 group-hover:scale-110 transition-transform"/>
                                       <span className="text-[10px] font-black tracking-widest uppercase">Presencial</span>
                                   </button>
-                                  <button onClick={() => setFechas({...fechas, tipo_entrega: 'Envío'})} className={`h-24 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all group ${fechas.tipo_entrega === 'Envío' ? 'bg-primary/10 border-primary text-primary shadow-[0_0_30px_-5px_var(--tw-shadow-color)] shadow-primary/30' : 'bg-black/40 border-[var(--border-soft)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-2)] hover:text-white'}`}>
+                                  <button onClick={() => setFechas({...fechas, tipo_entrega: 'Envío'})} className={`h-24 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all group ${fechas.tipo_entrega === 'Envío' ? 'bg-primary/10 border-primary text-primary shadow-[0_0_30px_-5px_var(--tw-shadow-color)] shadow-primary/30' : 'bg-[var(--bg-surface-2)] border-[var(--border-soft)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-3)] hover:text-[var(--text-primary)]'}`}>
                                       <MapPin className="w-6 h-6 group-hover:scale-110 transition-transform"/>
                                       <span className="text-[10px] font-black tracking-widest uppercase text-center leading-tight">Envío Fuera<br/>de la Ciudad</span>
                                   </button>
@@ -718,7 +718,7 @@ export default function NuevoContrato({ onVolver }) {
                                </div>
                            )}
 
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-black/40 p-6 rounded-2xl border border-[var(--border-soft)]">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-[var(--bg-surface-2)] p-6 rounded-2xl border border-[var(--border-soft)]">
                                 {/* SALIDA */}
                                 <div>
                                    <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Fecha de Salida <span className="text-red-400">*</span></label>

@@ -64,7 +64,7 @@ const Planes = () => {
         <h1 className="text-4xl font-black tracking-tighter text-[var(--text-primary)] sm:text-5xl">
           Elige tu <span className="text-gradient-guambra">Plan</span>
         </h1>
-        <p className="mt-4 text-gray-400 font-medium tracking-wide text-sm">
+        <p className="mt-4 text-[var(--text-secondary)] font-medium tracking-wide text-sm">
           Escala tu negocio con el nivel de potencia que necesitas. Todos los planes incluyen soporte por WhatsApp.
         </p>
       </div>
@@ -80,8 +80,8 @@ const Planes = () => {
               key={plan.id}
               className={`relative glass-card p-8 flex flex-col transition-all duration-500 group hover:scale-[1.02] ${
                 isPopular 
-                  ? 'border-primary/40 ring-1 ring-primary/20 shadow-[0_0_40px_rgba(51,92,255,0.1)]' 
-                  : 'hover:border-white/20'
+                  ? 'border-primary/40 ring-1 ring-primary/20 shadow-[0_0_40px_rgba(51,92,255,0.1)]'
+                  : 'hover:border-[var(--border-medium)]'
               }`}
             >
               {isPopular && (
@@ -106,13 +106,13 @@ const Planes = () => {
               </div>
 
               {/* Description */}
-              <p className="text-sm text-gray-400 leading-relaxed mb-6 min-h-[40px]">{plan.descripcion}</p>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6 min-h-[40px]">{plan.descripcion}</p>
 
               {/* Pricing */}
               <div className="mb-8">
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-black tracking-tighter text-[var(--text-primary)]">${plan.precio_mensual}</span>
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">/mes</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">/mes</span>
                 </div>
                 {plan.precio_anual && (
                   <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">
@@ -123,37 +123,37 @@ const Planes = () => {
 
               {/* Features */}
               <ul className="space-y-3 mb-8 flex-1">
-                <li className="flex items-center gap-2.5 text-sm text-gray-300 font-medium">
+                <li className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)] font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className="h-3.5 w-3.5 text-primary" /></div>
                   Hasta {plan.max_productos_activos} Trajes/Productos
                 </li>
-                <li className="flex items-center gap-2.5 text-sm text-gray-300 font-medium">
+                <li className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)] font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className="h-3.5 w-3.5 text-primary" /></div>
                   Hasta {plan.max_piezas_activas} Piezas
                 </li>
-                <li className="flex items-center gap-2.5 text-sm text-gray-300 font-medium">
+                <li className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)] font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className="h-3.5 w-3.5 text-primary" /></div>
                   {plan.max_empleados} Usuarios
                 </li>
-                <li className="flex items-center gap-2.5 text-sm text-gray-300 font-medium">
+                <li className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)] font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className="h-3.5 w-3.5 text-primary" /></div>
                   {plan.max_contratos_activos} Contratos activos
                 </li>
                 <li className="flex items-center gap-2.5 text-sm font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className={`h-3.5 w-3.5 ${plan.tiene_tienda_online ? 'text-primary' : 'text-[var(--text-muted)]'}`} /></div>
-                  <span className={plan.tiene_tienda_online ? 'text-gray-300' : 'text-[var(--text-muted)] line-through'}>Tienda Online</span>
+                  <span className={plan.tiene_tienda_online ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)] line-through'}>Tienda Online</span>
                 </li>
                 <li className="flex items-center gap-2.5 text-sm font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className={`h-3.5 w-3.5 ${plan.tiene_modulo_envios ? 'text-primary' : 'text-[var(--text-muted)]'}`} /></div>
-                  <span className={plan.tiene_modulo_envios ? 'text-gray-300' : 'text-[var(--text-muted)] line-through'}>Módulo de Envíos</span>
+                  <span className={plan.tiene_modulo_envios ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)] line-through'}>Módulo de Envíos</span>
                 </li>
                 <li className="flex items-center gap-2.5 text-sm font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className={`h-3.5 w-3.5 ${plan.tiene_modulo_proformas ? 'text-primary' : 'text-[var(--text-muted)]'}`} /></div>
-                  <span className={plan.tiene_modulo_proformas ? 'text-gray-300' : 'text-[var(--text-muted)] line-through'}>Proformas</span>
+                  <span className={plan.tiene_modulo_proformas ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)] line-through'}>Proformas</span>
                 </li>
                 <li className="flex items-center gap-2.5 text-sm font-medium">
                   <div className="rounded-full bg-[var(--bg-surface-2)] p-1 shrink-0"><Check className={`h-3.5 w-3.5 ${plan.tiene_dominio_propio ? 'text-primary' : 'text-[var(--text-muted)]'}`} /></div>
-                  <span className={plan.tiene_dominio_propio ? 'text-gray-300' : 'text-[var(--text-muted)] line-through'}>Dominio Propio</span>
+                  <span className={plan.tiene_dominio_propio ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)] line-through'}>Dominio Propio</span>
                 </li>
               </ul>
 

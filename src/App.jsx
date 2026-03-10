@@ -55,6 +55,22 @@ const PublicLayout = () => (
   </div>
 );
 
+// Layout reducido para Tutoriales (sin footer completo, solo copyright)
+const TutorialesLayout = () => (
+  <div className="flex flex-col min-h-screen bg-[var(--bg-page)] transition-colors duration-500">
+    <PublicNavbar />
+    <main className="flex-1">
+      <Outlet />
+    </main>
+    <div className="py-5 border-t border-[var(--border-soft)] flex items-center justify-center gap-3">
+      <span className="text-[9px] font-black text-[var(--text-muted)] opacity-50 uppercase tracking-[0.4em]">
+        © 2026 GUAMBRAWEB ENTERPRISE • ECUADOR
+      </span>
+    </div>
+    <WhatsAppWidget />
+  </div>
+);
+
 // Capa Global de Efectos (Fondo Andino + Cursor)
 const GlobalEffects = () => {
   const cursorRef = useRef(null);
@@ -250,10 +266,16 @@ function App() {
         {!isStorefrontMode && (
           <Route element={<PublicLayout />}>
             <Route index element={<Landing />} />
-            <Route path="tutoriales" element={<Tutoriales />} />
             <Route path="caracteristicas" element={<Caracteristicas />} />
             <Route path="terminos-condiciones" element={<TerminosCondiciones />} />
             <Route path="politica-datos" element={<PoliticaDatos />} />
+          </Route>
+        )}
+
+        {/* Tutoriales con layout reducido (solo copyright) */}
+        {!isStorefrontMode && (
+          <Route element={<TutorialesLayout />}>
+            <Route path="tutoriales" element={<Tutoriales />} />
           </Route>
         )}
 
@@ -279,11 +301,22 @@ function App() {
           <Route path="/dashboard" element={<AdminDashboard />} />
 
           {/* Configuraciones Generales (Ambos) */}
-          <Route path="/configuraciones" element={
-            <div className="p-4 md:p-8">
-               <ConfiguracionesGenerales />
-            </div>
-          } />
+          <Route
+            path="/configuraciones"
+            element={
+              <ModuleLayout
+                title="Configuración"
+                description="Ajustes de tu negocio y tienda online"
+                tabs={[]}
+              />
+            }
+          >
+            <Route index element={
+              <div className="p-4 md:p-8">
+                <ConfiguracionesGenerales />
+              </div>
+            } />
+          </Route>
 
           {/* Planes y Suscripciones (Ambos) */}
           <Route path="/planes" element={<Planes />} />
@@ -294,8 +327,8 @@ function App() {
             path="/contratos"
             element={
               <ModuleLayout
-                title="Contratos"
-                description="Gestión y control de alquileres"
+                title="Gestión de Contratos"
+                description="Administra todos tus contratos de alquiler"
                 tabs={[]}
               />
             }
@@ -309,8 +342,8 @@ function App() {
             path="/productos"
             element={
               <ModuleLayout
-                title="Trajes/Productos"
-                description="Gestión de inventario y conjuntos"
+                title="Catálogo de Trajes"
+                description="Administra tu inventario de trajes y disfraces"
                 tabs={[]}
               />
             }
@@ -341,8 +374,8 @@ function App() {
             path="/piezas"
             element={
               <ModuleLayout
-                title="Piezas/Elementos"
-                description="Gestión de piezas individuales"
+                title="Piezas y Elementos"
+                description="Gestiona las piezas individuales de tus trajes"
                 tabs={[]}
               />
             }
@@ -371,7 +404,7 @@ function App() {
             element={
               <ModuleLayout
                 title="Categorías"
-                description="Organización del catálogo de productos y piezas"
+                description="Organiza el catálogo de tus productos y piezas"
                 tabs={[]}
               />
             }
@@ -385,7 +418,7 @@ function App() {
             element={
               <ModuleLayout
                 title="Clientes"
-                description="Gestión de base de datos de clientes"
+                description="Base de datos de tus clientes"
                 tabs={[]}
               />
             }
@@ -407,7 +440,7 @@ function App() {
               <ProtectedRoute allowedRoles={["tenant_admin"]}>
                 <ModuleLayout
                   title="Empleados"
-                  description="Administración del equipo"
+                  description="Gestiona tu equipo de trabajo"
                   tabs={[]}
                 />
               </ProtectedRoute>
@@ -430,7 +463,7 @@ function App() {
               <ProtectedRoute allowedRoles={["tenant_admin"]}>
                 <ModuleLayout
                   title="Ingresos"
-                  description="Control comercial y entradas de dinero"
+                  description="Registro de todos los ingresos del negocio"
                   tabs={[]}
                 />
               </ProtectedRoute>
@@ -461,7 +494,7 @@ function App() {
               <ProtectedRoute allowedRoles={["tenant_admin"]}>
                 <ModuleLayout
                   title="Egresos"
-                  description="Salidas de dinero y gastos"
+                  description="Registro de gastos y pagos del negocio"
                   tabs={[]}
                 />
               </ProtectedRoute>
@@ -483,7 +516,7 @@ function App() {
               <ProtectedRoute allowedRoles={["tenant_admin"]}>
                 <ModuleLayout
                   title="Proveedores"
-                  description="Cartera de proveedores"
+                  description="Directorio de tus proveedores"
                   tabs={[]}
                 />
               </ProtectedRoute>
@@ -506,8 +539,8 @@ function App() {
             path="/pedidos-online"
             element={
               <ModuleLayout
-                title="Tienda Online"
-                description="Gestión de tienda pública y reservas"
+                title="Pedidos Online"
+                description="Pedidos recibidos desde tu tienda pública"
                 tabs={[]}
               />
             }
@@ -531,8 +564,8 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["tenant_admin"]}>
                 <ModuleLayout
-                  title="Caja"
-                  description="Arqueo y control de flujo"
+                  title="Caja Diaria"
+                  description="Control del flujo de caja por día"
                   tabs={[]}
                 />
               </ProtectedRoute>
@@ -575,7 +608,7 @@ function App() {
             element={
               <ModuleLayout
                 title="Calendario"
-                description="Vista cronológica"
+                description="Vista semaforizada de entregas y devoluciones"
                 tabs={[]}
               />
             }

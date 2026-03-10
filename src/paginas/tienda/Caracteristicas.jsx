@@ -1,12 +1,12 @@
-import { 
-  ShieldCheck, 
-  Zap, 
-  TrendingUp, 
-  Users, 
-  Database, 
-  Globe, 
-  ShoppingCart, 
-  FileText, 
+import {
+  ShieldCheck,
+  Zap,
+  TrendingUp,
+  Users,
+  Database,
+  Globe,
+  ShoppingCart,
+  FileText,
   CreditCard,
   PieChart,
   Layout,
@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Store,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Calendar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -40,6 +41,38 @@ const Caracteristicas = () => {
           title: 'Pagos Multicanal',
           benefit: 'Registra cobros en efectivo, tarjeta o transferencia con conciliación inmediata.',
           subFeatures: ['Historial de pagos', 'Saldos pendientes', 'Recibos digitales']
+        }
+      ]
+    },
+    {
+      id: 'calendario',
+      title: 'Calendario Semaforizado',
+      icon: Calendar,
+      description: 'Visualiza el estado de cada pedido de un vistazo. Cuatro colores, cero confusión.',
+      features: [
+        {
+          title: 'Verde — Pedidos Pendientes',
+          benefit: 'Identifica de inmediato qué pedidos están confirmados y esperan ser despachados a tu cliente.',
+          subFeatures: ['Alertas de preparación', 'Fechas de entrega', 'Asignación de prendas'],
+          dotColor: 'bg-emerald-500'
+        },
+        {
+          title: 'Amarillo — Pedido Despachado',
+          benefit: 'Sigue en tiempo real qué artículos ya salieron de tu local y están en manos del cliente.',
+          subFeatures: ['Fecha de salida', 'Fecha límite de devolución', 'Recordatorios automáticos'],
+          dotColor: 'bg-amber-400'
+        },
+        {
+          title: 'Rojo — Devuelto con Problemas',
+          benefit: 'Registra y gestiona devoluciones con daños, retrasos o cobros pendientes por resolver.',
+          subFeatures: ['Registro de daños', 'Cobros de penalidad', 'Notificación al cliente'],
+          dotColor: 'bg-red-500'
+        },
+        {
+          title: 'Gris — Devuelto sin Problemas',
+          benefit: 'Cierra el ciclo: el artículo volvió en perfecto estado y ya está disponible para el siguiente pedido.',
+          subFeatures: ['Historial del artículo', 'Stock liberado', 'Depósito devuelto'],
+          dotColor: 'bg-gray-400'
         }
       ]
     },
@@ -167,8 +200,15 @@ const Caracteristicas = () => {
                   {module.features.map((feature, fIdx) => (
                     <div key={fIdx} className="glass-card p-10 group hover:border-[var(--color-primary)] transition-all">
                       <div className="flex items-center justify-between mb-8">
-                         <div className="p-3 rounded-2xl bg-[var(--bg-surface-3)] border border-[var(--border-soft)] group-hover:bg-[var(--color-primary-dim)] group-hover:border-[var(--color-primary)] transition-all">
-                            <CheckCircle2 className="h-5 w-5 text-[var(--color-primary)]" />
+                         <div className={`p-3 rounded-2xl border transition-all ${
+                           feature.dotColor
+                             ? 'bg-[var(--bg-surface-3)] border-[var(--border-soft)]'
+                             : 'bg-[var(--bg-surface-3)] border-[var(--border-soft)] group-hover:bg-[var(--color-primary-dim)] group-hover:border-[var(--color-primary)]'
+                         }`}>
+                           {feature.dotColor
+                             ? <div className={`h-5 w-5 rounded-full ${feature.dotColor} shadow-lg`} />
+                             : <CheckCircle2 className="h-5 w-5 text-[var(--color-primary)]" />
+                           }
                          </div>
                          <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Funcionalidad</span>
                       </div>

@@ -249,15 +249,6 @@ export default function PedidosOnline() {
   // ─── RENDER ──────────────────────────────────────────────────────────────────
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2 flex items-center gap-3">
-          <ShoppingBag className="w-8 h-8 text-primary"/> Pedidos Online
-        </h1>
-        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">
-          Gestión de pedidos recibidos desde la tienda online pública
-        </p>
-      </div>
-
       <ModuleNavbar currentTab={currentTab} setTab={setTab} />
 
       {/* ─── PENDIENTES ─────────────────────────────────────────────────────── */}
@@ -434,7 +425,7 @@ export default function PedidosOnline() {
 
       {/* ─── MODAL: CONFIRMAR PAGO ───────────────────────────────────────────── */}
       {modalType === 'confirmar' && pedidoActivo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/60 backdrop-blur-sm animate-in fade-in">
           <form onSubmit={procesarConfirmacion} className="glass-card w-full max-w-lg p-8 animate-in zoom-in-95 duration-200 border border-green-500/20">
             <div className="w-16 h-16 rounded-3xl bg-green-500/20 text-green-400 flex items-center justify-center mb-6 border border-green-500/30">
               <CheckCircle2 className="w-8 h-8"/>
@@ -471,7 +462,7 @@ export default function PedidosOnline() {
 
       {/* ─── MODAL: RECHAZAR ────────────────────────────────────────────────── */}
       {modalType === 'rechazar' && pedidoActivo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/60 backdrop-blur-sm animate-in fade-in">
           <form onSubmit={procesarRechazo} className="glass-card w-full max-w-lg p-8 animate-in zoom-in-95 duration-200 border border-red-500/20">
             <div className="w-16 h-16 rounded-3xl bg-red-500/20 text-red-400 flex items-center justify-center mb-6 border border-red-500/30">
               <Ban className="w-8 h-8"/>
@@ -499,7 +490,7 @@ export default function PedidosOnline() {
 
       {/* ─── MODAL: VER DETALLE ─────────────────────────────────────────────── */}
       {modalType === 'ver' && pedidoActivo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/60 backdrop-blur-sm animate-in fade-in">
           <div className="glass-card w-full max-w-2xl p-0 animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-8 border-b border-[var(--border-soft)] flex justify-between items-start bg-primary/5">
               <div>

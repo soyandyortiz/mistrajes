@@ -106,7 +106,7 @@ const IniciarSesion = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-guambra pl-14"
+                  className="input-guambra !pl-14"
                   placeholder="••••••••"
                 />
               </div>

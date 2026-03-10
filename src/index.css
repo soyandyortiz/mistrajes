@@ -51,10 +51,10 @@
     --sector-moda-to: #6366f1;
     --sector-fiestas-from: #a855f7;
     --sector-fiestas-to: #ec4899;
-    --sector-belleza-from: #f59e0b;
-    --sector-belleza-to: #f97316;
-    --sector-maquinaria-from: #10b981;
-    --sector-maquinaria-to: #0d9488;
+    --sector-novia-from: #f43f5e;
+    --sector-novia-to: #ec4899;
+    --sector-formal-from: #f59e0b;
+    --sector-formal-to: #f97316;
 
     /* — NAVBAR — */
     --navbar-bg: rgba(8, 8, 16, 0.85);
@@ -123,10 +123,10 @@
     --sector-moda-to: #4338ca;
     --sector-fiestas-from: #9333ea;
     --sector-fiestas-to: #db2777;
-    --sector-belleza-from: #d97706;
-    --sector-belleza-to: #ea580c;
-    --sector-maquinaria-from: #059669;
-    --sector-maquinaria-to: #0f766e;
+    --sector-novia-from: #e11d48;
+    --sector-novia-to: #db2777;
+    --sector-formal-from: #d97706;
+    --sector-formal-to: #ea580c;
 
     /* — NAVBAR — */
     --navbar-bg: rgba(245, 245, 252, 0.92);
@@ -189,6 +189,66 @@
 
   .andean-shape:nth-child(even) {
     background: var(--shape-color-2);
+  }
+
+  @keyframes revealWord {
+    from {
+      opacity: 0;
+      transform: translateY(0.25em) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ---- Hero Visual — Animaciones CSS puras ---- */
+
+  @keyframes hero-float-1 {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50%       { transform: translateY(-16px) rotate(0.6deg); }
+  }
+  @keyframes hero-float-2 {
+    0%, 100% { transform: translateY(-8px) rotate(-0.4deg); }
+    50%       { transform: translateY(10px) rotate(0.4deg); }
+  }
+  @keyframes hero-float-3 {
+    0%, 100% { transform: translateY(6px) rotate(0.3deg); }
+    50%       { transform: translateY(-10px) rotate(-0.3deg); }
+  }
+  @keyframes hero-tilt {
+    0%,  100% { transform: perspective(900px) rotateX(4deg) rotateY(-7deg) rotateZ(0.5deg); }
+    33%        { transform: perspective(900px) rotateX(-3deg) rotateY(8deg) rotateZ(-0.5deg); }
+    66%        { transform: perspective(900px) rotateX(3deg) rotateY(4deg) rotateZ(0.3deg); }
+  }
+  @keyframes hero-spin-cw  { from { transform: rotate(0deg); }   to { transform: rotate(360deg);  } }
+  @keyframes hero-spin-ccw { from { transform: rotate(0deg); }   to { transform: rotate(-360deg); } }
+  @keyframes hero-scale-pulse {
+    0%, 100% { transform: scale(1);    opacity: 0.25; }
+    50%       { transform: scale(1.15); opacity: 0.4;  }
+  }
+
+  .hero-float-1 { animation: hero-float-1 4.2s ease-in-out infinite; }
+  .hero-float-2 { animation: hero-float-2 5.8s ease-in-out infinite; }
+  .hero-float-3 { animation: hero-float-3 3.6s ease-in-out infinite; }
+  .hero-tilt    { animation: hero-tilt    9s   ease-in-out infinite; }
+  .hero-spin-cw  { animation: hero-spin-cw  22s linear infinite; }
+  .hero-spin-ccw { animation: hero-spin-ccw 16s linear infinite; }
+  .hero-glow-pulse { animation: hero-scale-pulse 5s ease-in-out infinite; }
+
+  /* ---- Carrusel de Testimonios ---- */
+  @keyframes marquee-left {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  .animate-marquee {
+    animation: marquee-left 50s linear infinite;
+    will-change: transform;
+  }
+
+  .animate-marquee:hover {
+    animation-play-state: paused;
   }
 
   @keyframes floatAndean {
@@ -311,6 +371,10 @@
     transform: translateY(-1px);
     box-shadow: 0 8px 25px var(--color-primary-dim);
   }
+  .btn-guambra-primary span,
+  .btn-guambra-primary div {
+    color: inherit;
+  }
 
   /* Botón secundario */
   .btn-guambra-secondary {
@@ -376,6 +440,11 @@
   .input-guambra option {
     background-color: var(--bg-surface) !important;
     color: var(--text-primary) !important;
+  }
+
+  /* Input con ícono a la izquierda — viene DESPUÉS de .input-guambra para ganar el cascade */
+  .input-guambra-search {
+    padding-left: 2.75rem !important;
   }
 
   /* Badge counter */

@@ -253,11 +253,6 @@ export default function ComprobantesProformas() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-       <div className="mb-8 print-hidden">
-           <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2 flex items-center gap-3"><FileText className="w-8 h-8 text-primary"/> Oficina de Facturación</h1>
-           <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Comprobantes Finales y Cotizaciones</p>
-       </div>
-       
        <div className="print-hidden">
            <ModuleNavbar currentTab={currentTab} setTab={setTab} />
        </div>
@@ -298,11 +293,11 @@ export default function ComprobantesProformas() {
                           ) : listContratosFiltrada.length === 0 ? (
                              <tr><td colSpan="4" className="p-12 text-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Ningún contrato liquidado encaja con la búsqueda.</td></tr>
                           ) : listContratosFiltrada.map(c => (
-                             <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
+                             <tr key={c.id} className="hover:bg-[var(--bg-surface-2)] transition-colors">
                                 <td className="p-4">
                                    <p className="font-bold text-[var(--text-primary)] text-base">{c.cliente_nombre}</p>
                                    <div className="flex gap-2 mt-1">
-                                       <span className="text-[10px] font-mono tracking-widest uppercase text-white/50 border border-white/10 px-1 rounded bg-black/40">{c.id}</span>
+                                       <span className="text-[10px] font-mono tracking-widest uppercase text-[var(--text-muted)] border border-[var(--border-soft)] px-1 rounded bg-[var(--bg-surface-2)]">{c.id}</span>
                                        <span className="text-[10px] font-mono tracking-widest text-primary/50 flex items-center gap-1"><User className="w-3 h-3"/> {c.cliente_identificacion}</span>
                                    </div>
                                 </td>
@@ -312,7 +307,7 @@ export default function ComprobantesProformas() {
                                    </span>
                                 </td>
                                 <td className="p-4 text-right">
-                                   <span className="text-lg font-mono font-black text-white">${c.total_pagado?.toFixed(2)}</span>
+                                   <span className="text-lg font-mono font-black text-[var(--text-primary)]">${c.total_pagado?.toFixed(2)}</span>
                                 </td>
                                 <td className="p-4 text-right">
                                    <button onClick={() => iniciarComprobante(c)} className="btn-guambra-primary !px-4 !py-2 text-[10px] flex gap-2 ml-auto shadow-none">
@@ -333,11 +328,11 @@ export default function ComprobantesProformas() {
            <div className="animate-in slide-in-from-right-4">
                <button onClick={() => setTab('comprobantes')} className="btn-guambra-secondary self-start mb-4 !px-6 text-[10px] border-none print-hidden">← Menú de Contratos</button>
                
-               <div className="glass-card max-w-3xl mx-auto p-0 overflow-hidden bg-white/5 printable-area" id="area-comprobante">
+               <div className="glass-card max-w-3xl mx-auto p-0 overflow-hidden bg-[var(--bg-surface-2)] printable-area" id="area-comprobante">
                     {/* Header Ticket */}
-                    <div className="bg-[#0f0f11] p-10 border-b border-white/10 relative print-bg-white print-border-black">
+                    <div className="bg-[var(--bg-surface-3)] p-10 border-b border-[var(--border-soft)] relative print-bg-white print-border-black">
                         <div className="absolute top-10 right-10 text-right">
-                            <h2 className="text-2xl font-black uppercase tracking-tighter text-white print-text-black">Comprobante No.</h2>
+                            <h2 className="text-2xl font-black uppercase tracking-tighter text-[var(--text-primary)] print-text-black">Comprobante No.</h2>
                             <span className="text-primary font-mono font-black text-sm p-1 px-2 border border-primary/20 bg-primary/10 rounded print-bg-transparent print-text-black">CB-{Math.floor(Math.random() * 90000)}</span>
                         </div>
 
@@ -346,31 +341,31 @@ export default function ComprobantesProformas() {
                                 <div className="w-full h-full bg-black rounded-full mix-blend-multiply opacity-50"></div>
                             </div>
                             <div>
-                                <h1 className="text-xl font-black uppercase text-white print-text-black">Tenant Mis Trajes SA</h1>
-                                <p className="text-xs font-bold text-white/50 print-text-black">RUC: 1790000000001 | Matriz Principal</p>
+                                <h1 className="text-xl font-black uppercase text-[var(--text-primary)] print-text-black">Tenant Mis Trajes SA</h1>
+                                <p className="text-xs font-bold text-[var(--text-secondary)] print-text-black">RUC: 1790000000001 | Matriz Principal</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-white/10 print-border-black">
+                        <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-[var(--border-soft)] print-border-black">
                             <div>
                                 <span className="text-[9px] font-black uppercase tracking-widest text-primary mb-1 block print-text-black">A nombre de:</span>
-                                <p className="font-bold text-white text-base uppercase print-text-black">{contratoActivo.cliente_nombre}</p>
-                                <p className="text-xs font-mono text-white/60 print-text-black">CI/RUC: {contratoActivo.cliente_identificacion}</p>
+                                <p className="font-bold text-[var(--text-primary)] text-base uppercase print-text-black">{contratoActivo.cliente_nombre}</p>
+                                <p className="text-xs font-mono text-[var(--text-secondary)] print-text-black">CI/RUC: {contratoActivo.cliente_identificacion}</p>
                             </div>
                             <div className="text-right">
                                 <span className="text-[9px] font-black uppercase tracking-widest text-primary mb-1 block print-text-black">Fecha de Expedición:</span>
-                                <p className="font-bold text-white text-base print-text-black">{new Date().toLocaleDateString()}</p>
-                                <p className="text-xs font-mono text-white/60 print-text-black">Ref Contrato Interno: {contratoActivo.id}</p>
+                                <p className="font-bold text-[var(--text-primary)] text-base print-text-black">{new Date().toLocaleDateString()}</p>
+                                <p className="text-xs font-mono text-[var(--text-secondary)] print-text-black">Ref Contrato Interno: {contratoActivo.id}</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-10 space-y-8">
                         <div>
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 border-b border-white/10 pb-2 mb-4 print-text-black print-border-black">Cuerpo Comercial (Productos Originales)</h4>
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] border-b border-[var(--border-soft)] pb-2 mb-4 print-text-black print-border-black">Cuerpo Comercial (Productos Originales)</h4>
                             <table className="w-full text-left print-text-black">
                                 <thead>
-                                    <tr className="text-[9px] uppercase font-black text-white/60 opacity-60 print-text-black">
+                                    <tr className="text-[9px] uppercase font-black text-[var(--text-secondary)] opacity-60 print-text-black">
                                         <th className="pb-2">Cant</th>
                                         <th className="pb-2">Descripción Insumo</th>
                                         <th className="pb-2 text-right">Unit.</th>
@@ -378,10 +373,10 @@ export default function ComprobantesProformas() {
                                 </thead>
                                 <tbody>
                                     {contratoActivo.productos.map((p,i) => (
-                                        <tr key={i} className="border-b border-white/5 print-border-black">
+                                        <tr key={i} className="border-b border-[var(--border-soft)] print-border-black">
                                             <td className="py-3 text-sm font-black font-mono">{p.cant}x</td>
-                                            <td className="py-3 font-bold text-sm text-white/90 print-text-black">{p.desc}</td>
-                                            <td className="py-3 text-right font-mono font-bold text-white/80 print-text-black">${p.precio.toFixed(2)}</td>
+                                            <td className="py-3 font-bold text-sm text-[var(--text-primary)] print-text-black">{p.desc}</td>
+                                            <td className="py-3 text-right font-mono font-bold text-[var(--text-secondary)] print-text-black">${p.precio.toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -400,10 +395,10 @@ export default function ComprobantesProformas() {
 
                             {cobrosAdicionales.map((c, i) => (
                                 <div key={c.id} className="flex gap-4 items-center mt-3 animate-in fade-in">
-                                    <input type="text" placeholder="Concepto del cobro extra (Ej. Quemadura Plancha)" className="input-guambra flex-[3] !bg-black" value={c.desc} onChange={e => updateCobroExtra(c.id, 'desc', e.target.value)} />
+                                    <input type="text" placeholder="Concepto del cobro extra (Ej. Quemadura Plancha)" className="input-guambra flex-[3]" value={c.desc} onChange={e => updateCobroExtra(c.id, 'desc', e.target.value)} />
                                     <div className="relative flex-[1]">
-                                        <DollarSign className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30"/>
-                                        <input type="number" placeholder="0.00" step="0.01" className="input-guambra pl-10 font-mono !bg-black" value={c.monto} onChange={e => updateCobroExtra(c.id, 'monto', e.target.value)} />
+                                        <DollarSign className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"/>
+                                        <input type="number" placeholder="0.00" step="0.01" className="input-guambra pl-10 font-mono" value={c.monto} onChange={e => updateCobroExtra(c.id, 'monto', e.target.value)} />
                                     </div>
                                     <button onClick={() => removeCobroExtra(c.id)} className="p-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20"><Trash2 className="w-4 h-4"/></button>
                                 </div>
@@ -427,9 +422,9 @@ export default function ComprobantesProformas() {
                             </div>
                         )}
 
-                        <div className="flex flex-col items-end pt-6 border-t border-white/10 print-border-black font-mono">
+                        <div className="flex flex-col items-end pt-6 border-t border-[var(--border-soft)] print-border-black font-mono">
                             <div className="w-full max-w-xs space-y-2">
-                                <div className="flex justify-between text-white/60 print-text-black text-sm">
+                                <div className="flex justify-between text-[var(--text-secondary)] print-text-black text-sm">
                                     <span>Venta Base Liquidada:</span>
                                     <span>${contratoActivo.total_pagado.toFixed(2)}</span>
                                 </div>
@@ -437,7 +432,7 @@ export default function ComprobantesProformas() {
                                     <span>Sumatoria Penalizaciones:</span>
                                     <span>+${cobrosAdicionales.reduce((acc, c) => acc + (parseFloat(c.monto)||0), 0).toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-xl font-black text-white print-text-black uppercase tracking-tighter pt-4 border-t border-white/20 print-border-black">
+                                <div className="flex justify-between text-xl font-black text-[var(--text-primary)] print-text-black uppercase tracking-tighter pt-4 border-t border-[var(--border-medium)] print-border-black">
                                     <span>Cobro Global Real:</span>
                                     <span>${ (contratoActivo.total_pagado + cobrosAdicionales.reduce((acc, c) => acc + (parseFloat(c.monto)||0), 0)).toFixed(2) }</span>
                                 </div>
@@ -475,31 +470,31 @@ export default function ComprobantesProformas() {
               <div className="glass-card overflow-hidden">
                  <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                       <thead className="bg-white/5 border-b border-white/10">
+                       <thead className="bg-[var(--bg-surface-2)] border-b border-[var(--border-soft)]">
                           <tr>
-                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 w-1/4">Folio Proforma</th>
-                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50">Línea de Vida Comercial</th>
-                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 text-center">Estado Técnico</th>
-                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 text-right">Potencial Facturado</th>
-                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 text-right">Firma Digital</th>
+                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] w-1/4">Folio Proforma</th>
+                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Línea de Vida Comercial</th>
+                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center">Estado Técnico</th>
+                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right">Potencial Facturado</th>
+                             <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right">Firma Digital</th>
                           </tr>
                        </thead>
-                       <tbody className="divide-y divide-white/5">
+                       <tbody className="divide-y divide-[var(--border-soft)]">
                           {filterProformasL.length === 0 ? (
-                             <tr><td colSpan="5" className="p-12 text-center text-[10px] font-black uppercase tracking-widest text-white/30">Librería de cotizaciones vacía.</td></tr>
+                             <tr><td colSpan="5" className="p-12 text-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Librería de cotizaciones vacía.</td></tr>
                           ) : filterProformasL.map(p => {
                               // Validacion en vivo
                               const hVencida = new Date() > new Date(p.vigencia_hasta + 'T23:59:59Z');
 
                               return (
-                                 <tr key={p.id} className={`hover:bg-white/[0.02] transition-colors ${hVencida ? 'opacity-50 hover:opacity-100 mix-blend-luminosity' : ''}`}>
+                                 <tr key={p.id} className={`hover:bg-[var(--bg-surface-2)] transition-colors ${hVencida ? 'opacity-50 hover:opacity-100 mix-blend-luminosity' : ''}`}>
                                     <td className="p-4">
-                                       <p className="font-bold text-white text-base">{p.cliente_nombre}</p>
-                                       <span className="text-[10px] font-mono tracking-widest uppercase text-white/50 block mt-1">{p.id}</span>
+                                       <p className="font-bold text-[var(--text-primary)] text-base">{p.cliente_nombre}</p>
+                                       <span className="text-[10px] font-mono tracking-widest uppercase text-[var(--text-muted)] block mt-1">{p.id}</span>
                                     </td>
                                     <td className="p-4">
                                        <div className="flex flex-col gap-1.5">
-                                           <span className="text-[9px] font-bold tracking-widest text-white/50 uppercase"><Clock className="w-3 h-3 inline text-white/30"/> Nace: {new Date(p.fecha_creacion).toLocaleDateString()}</span>
+                                           <span className="text-[9px] font-bold tracking-widest text-[var(--text-muted)] uppercase"><Clock className="w-3 h-3 inline text-[var(--text-muted)]"/> Nace: {new Date(p.fecha_creacion).toLocaleDateString()}</span>
                                            <span className="text-[9px] font-bold tracking-widest text-primary/80 uppercase">Muere: {new Date(p.vigencia_hasta).toLocaleDateString()}</span>
                                        </div>
                                     </td>
@@ -512,7 +507,7 @@ export default function ComprobantesProformas() {
                                        <span className="text-lg font-mono font-black text-[var(--text-primary)]">${p.total?.toFixed(2)}</span>
                                     </td>
                                     <td className="p-4 text-right">
-                                       <button onClick={() => { setProformaActiva(p); setTab('ver_proforma'); }} className="p-2.5 rounded-lg text-white/80 hover:text-white bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 transition-all font-black text-xs uppercase tracking-widest flex ml-auto gap-2">
+                                       <button onClick={() => { setProformaActiva(p); setTab('ver_proforma'); }} className="p-2.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-2)] border border-[var(--border-soft)] hover:border-[var(--border-medium)] hover:bg-[var(--bg-surface-3)] transition-all font-black text-xs uppercase tracking-widest flex ml-auto gap-2">
                                             <Calculator className="w-4 h-4"/> Cotización
                                        </button>
                                     </td>
@@ -537,25 +532,25 @@ export default function ComprobantesProformas() {
                
                <div className="glass-card p-10 space-y-12">
                    
-                   <div className="border-b border-white/10 pb-6">
-                       <h2 className="text-2xl font-black uppercase tracking-tighter text-white mb-2"><Calculator className="w-6 h-6 inline mr-2 text-primary -translate-y-1"/> Mesa de Cotización Previa</h2>
-                       <p className="text-xs text-white/50 max-w-xl">Crea presupuestos magnéticos formales. Estos documentos carecen de peso legal final o reserva de inventario, operan como un imán para concretar Contratos más tarde.</p>
+                   <div className="border-b border-[var(--border-soft)] pb-6">
+                       <h2 className="text-2xl font-black uppercase tracking-tighter text-[var(--text-primary)] mb-2"><Calculator className="w-6 h-6 inline mr-2 text-primary -translate-y-1"/> Mesa de Cotización Previa</h2>
+                       <p className="text-xs text-[var(--text-secondary)] max-w-xl">Crea presupuestos magnéticos formales. Estos documentos carecen de peso legal final o reserva de inventario, operan como un imán para concretar Contratos más tarde.</p>
                    </div>
 
                    {/* P1: CLIENTE */}
                    <div className="space-y-6">
                        <h3 className="text-[10px] uppercase font-black text-primary tracking-[0.2em] flex items-center gap-2"><div className="w-5 h-5 rounded bg-primary/20 flex text-center items-center justify-center text-primary">1</div> Sujeto de Cotización y Envío</h3>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black/20 p-6 rounded-2xl border border-white/5">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[var(--bg-surface-2)] p-6 rounded-2xl border border-[var(--border-soft)]">
                            <div className="md:col-span-2">
-                               <label className="text-[10px] uppercase tracking-widest font-bold text-white/50 mb-2 block">Nombre Jurídico Comercial o Persona <span className="text-primary">*</span></label>
-                               <input required type="text" className="input-guambra !h-14 font-bold text-white" value={proformaForm.cliente_nombre} onChange={e => handleProformaChange('cliente_nombre', e.target.value)} placeholder="A quién se extiende este sobre sellado..." />
+                               <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Nombre Jurídico Comercial o Persona <span className="text-primary">*</span></label>
+                               <input required type="text" className="input-guambra !h-14 font-bold" value={proformaForm.cliente_nombre} onChange={e => handleProformaChange('cliente_nombre', e.target.value)} placeholder="A quién se extiende este sobre sellado..." />
                            </div>
                            <div>
-                               <label className="text-[10px] uppercase tracking-widest font-bold text-white/50 mb-2 block">Cédula / RUC Empresarial</label>
+                               <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Cédula / RUC Empresarial</label>
                                <input type="text" className="input-guambra" value={proformaForm.cliente_id} onChange={e => handleProformaChange('cliente_id', e.target.value)} />
                            </div>
                            <div>
-                               <label className="text-[10px] uppercase tracking-widest font-bold text-white/50 mb-2 block">Canal Directo de Envío (Mail / WP)</label>
+                               <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Canal Directo de Envío (Mail / WP)</label>
                                <input type="text" className="input-guambra" value={proformaForm.cliente_email} onChange={e => handleProformaChange('cliente_email', e.target.value)} placeholder="usuario@empresa.com o Número" />
                            </div>
                        </div>
@@ -565,46 +560,46 @@ export default function ComprobantesProformas() {
                    <div className="space-y-6 relative">
                        <h3 className="text-[10px] uppercase font-black text-primary tracking-[0.2em] flex items-center gap-2"><div className="w-5 h-5 rounded bg-primary/20 flex text-center items-center justify-center text-primary">2</div> Inventario / Tabla Blanca Numérica</h3>
                        
-                       <div className="bg-[#0f0f11] rounded-2xl border border-white/10 overflow-hidden">
+                       <div className="bg-[var(--bg-surface-3)] rounded-2xl border border-[var(--border-soft)] overflow-hidden">
                            <div className="overflow-x-auto">
                            <table className="w-full text-left">
                                <thead className="bg-[var(--bg-surface-2)] border-b border-[var(--border-soft)]">
                                   <tr>
-                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 w-2/5">Item Catalogado</th>
-                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 text-center w-20">Uds.</th>
-                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 text-right w-32">Costo U.</th>
-                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 text-right">Bonificación / Dscto</th>
-                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-white/50 text-right w-32">Parcial</th>
+                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] w-2/5">Item Catalogado</th>
+                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center w-20">Uds.</th>
+                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right w-32">Costo U.</th>
+                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right">Bonificación / Dscto</th>
+                                     <th className="p-4 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right w-32">Parcial</th>
                                      <th className="p-4 w-12"></th>
                                   </tr>
                                </thead>
-                               <tbody className="divide-y divide-white/5 bg-black/20">
+                               <tbody className="divide-y divide-[var(--border-soft)]">
                                    {proformaForm.productos.map(p => (
                                        <tr key={p.id} className="group">
                                            <td className="p-3">
-                                               <input required type="text" className="input-guambra !h-10 text-sm !bg-black" placeholder="Describa Traje/Bien..." value={p.nombre} onChange={e => updateProductoProforma(p.id, 'nombre', e.target.value)} />
+                                               <input required type="text" className="input-guambra !h-10 text-sm" placeholder="Describa Traje/Bien..." value={p.nombre} onChange={e => updateProductoProforma(p.id, 'nombre', e.target.value)} />
                                            </td>
                                            <td className="p-3">
-                                               <input required type="number" min="1" className="input-guambra !h-10 text-sm !bg-black text-center" value={p.cantidad} onChange={e => updateProductoProforma(p.id, 'cantidad', e.target.value)} />
+                                               <input required type="number" min="1" className="input-guambra !h-10 text-sm text-center" value={p.cantidad} onChange={e => updateProductoProforma(p.id, 'cantidad', e.target.value)} />
                                            </td>
                                            <td className="p-3 relative">
-                                               <DollarSign className="w-3 h-3 absolute left-5 top-1/2 -translate-y-1/2 text-white/30 z-10"/>
-                                               <input required type="number" step="0.01" min="0" className="input-guambra !h-10 text-sm font-mono text-right pl-6 !bg-black" value={p.p_unitario} onChange={e => updateProductoProforma(p.id, 'p_unitario', e.target.value)} />
+                                               <DollarSign className="w-3 h-3 absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-10"/>
+                                               <input required type="number" step="0.01" min="0" className="input-guambra !h-10 text-sm font-mono text-right pl-6" value={p.p_unitario} onChange={e => updateProductoProforma(p.id, 'p_unitario', e.target.value)} />
                                            </td>
                                            <td className="p-3">
-                                               <div className="flex bg-black rounded-xl overflow-hidden border border-white/10">
-                                                   <select className="bg-transparent border-r border-white/10 text-xs font-black text-primary px-2 outline-none" value={p.descuento_tipo} onChange={e => updateProductoProforma(p.id, 'descuento_tipo', e.target.value)}>
+                                               <div className="flex bg-[var(--bg-input)] rounded-xl overflow-hidden border border-[var(--border-soft)]">
+                                                   <select className="bg-transparent border-r border-[var(--border-soft)] text-xs font-black text-primary px-2 outline-none" value={p.descuento_tipo} onChange={e => updateProductoProforma(p.id, 'descuento_tipo', e.target.value)}>
                                                        <option value="Fijo">-$</option>
                                                        <option value="%">% Off</option>
                                                    </select>
-                                                   <input type="number" min="0" step="0.01" className="w-full bg-transparent text-right text-xs font-mono p-2 outline-none text-white focus:bg-white/5 transition-colors" value={p.descuento_val} onChange={e => updateProductoProforma(p.id, 'descuento_val', e.target.value)} />
+                                                   <input type="number" min="0" step="0.01" className="w-full bg-transparent text-right text-xs font-mono p-2 outline-none text-[var(--text-primary)] focus:bg-[var(--color-primary-dim)] transition-colors" value={p.descuento_val} onChange={e => updateProductoProforma(p.id, 'descuento_val', e.target.value)} />
                                                </div>
                                            </td>
                                            <td className="p-3 text-right">
-                                               <span className="font-mono font-black text-white bg-white/5 py-1.5 px-3 rounded-lg border border-white/5">${(p.subtotal || 0).toFixed(2)}</span>
+                                               <span className="font-mono font-black text-[var(--text-primary)] bg-[var(--bg-surface-2)] py-1.5 px-3 rounded-lg border border-[var(--border-soft)]">${(p.subtotal || 0).toFixed(2)}</span>
                                            </td>
                                            <td className="p-3 text-center">
-                                               <button type="button" onClick={() => removeProductoProforma(p.id)} className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4"/></button>
+                                               <button type="button" onClick={() => removeProductoProforma(p.id)} className="text-[var(--text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4"/></button>
                                            </td>
                                        </tr>
                                    ))}
@@ -615,8 +610,8 @@ export default function ComprobantesProformas() {
                            <div className="p-4 bg-primary/5 border-t border-primary/20 flex justify-between items-center">
                                <button type="button" onClick={addProductoProforma} className="btn-guambra-secondary bg-primary/10 border-none text-primary/80 hover:bg-primary/20 !py-2 text-[10px]"><Plus className="w-3 h-3 inline mr-1"/> Adicionar Renglón Comprador</button>
                                <div className="flex items-center gap-4 text-right">
-                                   <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">Macro-Valoración Final</span>
-                                   <span className="text-3xl font-black font-mono text-white">${proformaTotal.toFixed(2)}</span>
+                                   <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">Macro-Valoración Final</span>
+                                   <span className="text-3xl font-black font-mono text-[var(--text-primary)]">${proformaTotal.toFixed(2)}</span>
                                </div>
                            </div>
                        </div>
@@ -630,13 +625,13 @@ export default function ComprobantesProformas() {
                                <label key={dias} className={`flex-1 glass-card p-6 cursor-pointer border-2 transition-all group relative overflow-hidden flex items-center justify-center text-center gap-3 ${proformaForm.vigencia_dias == dias ? 'border-primary bg-primary/10' : 'border-transparent hover:border-white/10'}`}>
                                    <input type="radio" className="hidden" name="vigencia" value={dias} checked={proformaForm.vigencia_dias == dias} onChange={e => handleProformaChange('vigencia_dias', e.target.value)} />
                                    {proformaForm.vigencia_dias == dias && <Check className="w-5 h-5 text-primary"/>}
-                                   <span className={`text-lg font-black uppercase tracking-widest ${proformaForm.vigencia_dias == dias ? 'text-white' : 'text-white/50'}`}>Proteger × {dias} Días</span>
+                                   <span className={`text-lg font-black uppercase tracking-widest ${proformaForm.vigencia_dias == dias ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>Proteger × {dias} Días</span>
                                </label>
                            ))}
                        </div>
                    </div>
 
-                   <div className="pt-8 border-t border-white/10 flex justify-end">
+                   <div className="pt-8 border-t border-[var(--border-soft)] flex justify-end">
                        <button type="submit" disabled={isProcessing || proformaForm.productos.length===0} className="btn-guambra-primary !bg-white text-black hover:bg-gray-200 shadow-xl shadow-white/20 border-white flex items-center gap-2 !px-12 !h-16 text-sm disabled:opacity-40">
                            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin"/> : <FileDown className="w-5 h-5"/>} Ensamblar Formulario Proforma Legal
                        </button>

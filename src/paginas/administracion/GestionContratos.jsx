@@ -173,7 +173,7 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
   const getOrigenBadge = (canal) => {
     if (canal === 'online')
       return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20"><ShoppingBag className="w-2.5 h-2.5"/>Tienda Online</span>;
-    return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-white/5 text-white/40 border border-white/10">Manual</span>;
+    return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-soft)]">Manual</span>;
   };
 
   const filterData = contratos.filter(c =>
@@ -214,16 +214,16 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                 <th className="relative py-5 pl-4 pr-8"><span className="sr-only">Acciones</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[var(--border-soft)]">
               {loading ? (
                 <tr><td colSpan="6" className="py-12 text-center"><Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" /></td></tr>
               ) : filterData.length === 0 ? (
-                <tr><td colSpan="6" className="py-12 text-center text-xs opacity-40 tracking-widest uppercase font-bold">No hay contratos activos</td></tr>
+                <tr><td colSpan="6" className="py-12 text-center text-xs text-[var(--text-muted)] tracking-widest uppercase font-bold">No hay contratos activos</td></tr>
               ) : filterData.map((contract) => (
-                <tr key={contract.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
+                <tr key={contract.id} className="hover:bg-[var(--bg-surface-2)] transition-all duration-200 group">
                   <td className="whitespace-nowrap py-5 pl-8 pr-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-bold text-white opacity-40 group-hover:bg-primary/20 group-hover:opacity-100 transition-all">
+                      <div className="h-8 w-8 rounded-full bg-[var(--bg-surface-2)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)] group-hover:bg-[var(--color-primary-dim)] group-hover:text-[var(--color-primary)] transition-all">
                         {contract.clientes?.nombre_completo?.charAt(0) || 'C'}
                       </div>
                       <div>
@@ -272,13 +272,13 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
 
       {/* Modal Entrega */}
       {isEntregaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/80 backdrop-blur-md">
           <div className="glass-card w-full max-w-md p-8 animate-in zoom-in-95">
-            <h3 className="text-xl font-black uppercase text-white tracking-tighter mb-4">Procesar Entrega</h3>
-            <p className="text-xs text-white/50 mb-6 font-medium">Al confirmar, declaras que se ha cobrado el saldo restante (${contratoActivo?.saldo_pendiente}).</p>
+            <h3 className="text-xl font-black uppercase text-[var(--text-primary)] tracking-tighter mb-4">Procesar Entrega</h3>
+            <p className="text-xs text-[var(--text-secondary)] mb-6 font-medium">Al confirmar, declaras que se ha cobrado el saldo restante (${contratoActivo?.saldo_pendiente}).</p>
             <form onSubmit={confirmarEntrega} className="space-y-6">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Garantía Dejada Por el Cliente</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Garantía Dejada Por el Cliente</label>
                 <input type="text" className="input-guambra" required value={garantiaForm} onChange={e => setGarantiaForm(e.target.value)} placeholder="Ej. Licencia de Conducir, $50 billete..." />
               </div>
               <div className="flex gap-4">
@@ -292,15 +292,15 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
 
       {/* Modal Devolución */}
       {isDevolucionOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/80 backdrop-blur-md">
           <div className="glass-card w-full max-w-lg p-8 animate-in zoom-in-95">
-            <h3 className="text-xl font-black uppercase text-white tracking-tighter mb-4">Registro de Devolución</h3>
+            <h3 className="text-xl font-black uppercase text-[var(--text-primary)] tracking-tighter mb-4">Registro de Devolución</h3>
             <div className="space-y-6">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Notas de Recepción (Opcional)</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Notas de Recepción (Opcional)</label>
                 <textarea className="input-guambra min-h-[100px]" value={notasDevolucion} onChange={e => setNotasDevolucion(e.target.value)} placeholder="Describe cualquier daño, quemadura, mancha..." />
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border-soft)]">
                 <button onClick={() => confirmarDevolucion('devuelto_ok')} className="bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 rounded-xl p-4 transition-all flex flex-col items-center gap-2 group">
                   <CheckCircle2 className="h-6 w-6 group-hover:scale-110 transition-transform" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Todo Conforme</span>
@@ -318,29 +318,29 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
 
       {/* Modal Agregar Abono */}
       {isAbonoOpen && contratoActivo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/80 backdrop-blur-md">
           <form onSubmit={registrarAbono} className="glass-card w-full max-w-md p-8 animate-in zoom-in-95 border border-green-500/20">
             <div className="w-14 h-14 rounded-2xl bg-green-500/20 text-green-400 flex items-center justify-center mb-6 border border-green-500/30">
               <DollarSign className="w-7 h-7"/>
             </div>
-            <h3 className="text-xl font-black uppercase text-white tracking-tighter mb-1">Registrar Abono</h3>
-            <p className="text-xs text-white/40 font-medium mb-8">
-              Saldo pendiente: <span className="text-white font-mono font-black">${Number(contratoActivo.saldo_pendiente || 0).toFixed(2)}</span>
+            <h3 className="text-xl font-black uppercase text-[var(--text-primary)] tracking-tighter mb-1">Registrar Abono</h3>
+            <p className="text-xs text-[var(--text-muted)] font-medium mb-8">
+              Saldo pendiente: <span className="text-[var(--text-primary)] font-mono font-black">${Number(contratoActivo.saldo_pendiente || 0).toFixed(2)}</span>
             </p>
             <div className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Monto del abono *</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Monto del abono *</label>
                 <input type="number" step="0.01" min="0.01" required className="input-guambra font-mono text-xl" value={montoAbono} onChange={e => setMontoAbono(e.target.value)} placeholder="0.00" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Método de pago *</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Método de pago *</label>
                 <select required className="input-guambra" value={metodoPagoAbono} onChange={e => setMetodoPagoAbono(e.target.value)}>
                   <option value="">Seleccione...</option>
                   {METODOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
             </div>
-            <div className="flex gap-3 mt-8 pt-6 border-t border-white/10">
+            <div className="flex gap-3 mt-8 pt-6 border-t border-[var(--border-soft)]">
               <button type="button" onClick={() => setIsAbonoOpen(false)} className="btn-guambra-secondary flex-1">Cancelar</button>
               <button type="submit" className="flex-1 bg-green-500 text-white font-black uppercase tracking-widest rounded-xl h-12 text-xs flex items-center justify-center gap-2 hover:bg-green-400 transition-all"><CheckCircle2 className="w-4 h-4"/> Registrar</button>
             </div>
@@ -350,18 +350,18 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
 
       {/* Modal Anular Contrato */}
       {isAnularOpen && contratoActivo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/80 backdrop-blur-md">
           <form onSubmit={anularContrato} className="glass-card w-full max-w-md p-8 animate-in zoom-in-95 border border-red-500/20">
             <div className="w-14 h-14 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mb-6 border border-red-500/30">
               <Ban className="w-7 h-7"/>
             </div>
-            <h3 className="text-xl font-black uppercase text-white tracking-tighter mb-1">Anular Contrato</h3>
+            <h3 className="text-xl font-black uppercase text-[var(--text-primary)] tracking-tighter mb-1">Anular Contrato</h3>
             <p className="text-xs text-red-300/60 font-medium mb-8">El contrato pasará al historial con estado <strong>Cancelado</strong>. El cliente pierde el 100% del anticipo pagado. Esta acción no se puede deshacer.</p>
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-red-400 mb-2">Motivo de anulación *</label>
               <textarea required rows={4} className="input-guambra resize-none" value={motivoAnulacion} onChange={e => setMotivoAnulacion(e.target.value)} placeholder="Ej: Cliente no se presentó a retirar los trajes..." />
             </div>
-            <div className="flex gap-3 mt-8 pt-6 border-t border-white/10">
+            <div className="flex gap-3 mt-8 pt-6 border-t border-[var(--border-soft)]">
               <button type="button" onClick={() => setIsAnularOpen(false)} className="btn-guambra-secondary flex-1">Cancelar</button>
               <button type="submit" className="flex-1 bg-red-500 text-white font-black uppercase tracking-widest rounded-xl h-12 text-xs flex items-center justify-center gap-2 hover:bg-red-600 transition-all"><X className="w-4 h-4"/> Anular Definitivamente</button>
             </div>
@@ -403,25 +403,25 @@ const ContratosProblemasView = () => {
       ) : contratos.length === 0 ? (
         <div className="glass-card p-16 text-center">
           <CheckCircle2 className="h-12 w-12 text-green-400 mx-auto mb-4 opacity-60" />
-          <p className="text-xs font-bold uppercase tracking-widest text-white/40">Sin contratos con incidencias activas</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Sin contratos con incidencias activas</p>
         </div>
       ) : (
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/5">
-              <thead className="bg-white/[0.03]">
+            <table className="min-w-full divide-y divide-[var(--border-soft)]">
+              <thead className="bg-[var(--bg-surface-2)]">
                 <tr>
-                  <th className="py-5 pl-8 text-left text-[10px] font-bold text-white uppercase tracking-[0.2em] opacity-40">Ticket</th>
-                  <th className="px-4 py-5 text-left text-[10px] font-bold text-white uppercase tracking-[0.2em] opacity-40">Cliente</th>
-                  <th className="px-4 py-5 text-left text-[10px] font-bold text-white uppercase tracking-[0.2em] opacity-40">Notas de Incidencia</th>
+                  <th className="py-5 pl-8 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Ticket</th>
+                  <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Cliente</th>
+                  <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Notas de Incidencia</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[var(--border-soft)]">
                 {contratos.map(c => (
-                  <tr key={c.id} className="hover:bg-white/[0.03] transition-all">
+                  <tr key={c.id} className="hover:bg-[var(--bg-surface-2)] transition-all">
                     <td className="py-5 pl-8 font-mono font-black text-red-400 text-sm">{c.codigo_contrato}</td>
-                    <td className="px-4 py-5 text-sm font-bold text-white">{c.clientes?.nombre_completo}</td>
-                    <td className="px-4 py-5 text-xs text-white/60">{c.notas || '—'}</td>
+                    <td className="px-4 py-5 text-sm font-bold text-[var(--text-primary)]">{c.clientes?.nombre_completo}</td>
+                    <td className="px-4 py-5 text-xs text-[var(--text-secondary)]">{c.notas || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -463,26 +463,26 @@ const HistorialView = () => {
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : contratos.length === 0 ? (
         <div className="glass-card p-16 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-white/40">Sin contratos finalizados aún</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Sin contratos finalizados aún</p>
         </div>
       ) : (
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/5">
-              <thead className="bg-white/[0.03]">
+            <table className="min-w-full divide-y divide-[var(--border-soft)]">
+              <thead className="bg-[var(--bg-surface-2)]">
                 <tr>
-                  <th className="py-5 pl-8 text-left text-[10px] font-bold text-white uppercase tracking-[0.2em] opacity-40">Ticket</th>
-                  <th className="px-4 py-5 text-left text-[10px] font-bold text-white uppercase tracking-[0.2em] opacity-40">Cliente</th>
-                  <th className="px-4 py-5 text-left text-[10px] font-bold text-white uppercase tracking-[0.2em] opacity-40">Total</th>
-                  <th className="px-4 py-5 text-left text-[10px] font-bold text-white uppercase tracking-[0.2em] opacity-40">Estado Final</th>
+                  <th className="py-5 pl-8 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Ticket</th>
+                  <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Cliente</th>
+                  <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Total</th>
+                  <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Estado Final</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[var(--border-soft)]">
                 {contratos.map(c => (
-                  <tr key={c.id} className="hover:bg-white/[0.03] transition-all">
+                  <tr key={c.id} className="hover:bg-[var(--bg-surface-2)] transition-all">
                     <td className="py-5 pl-8 font-mono font-black text-primary text-sm">{c.codigo_contrato}</td>
-                    <td className="px-4 py-5 text-sm font-bold text-white">{c.clientes?.nombre_completo}</td>
-                    <td className="px-4 py-5 text-sm font-black text-white">${c.total}</td>
+                    <td className="px-4 py-5 text-sm font-bold text-[var(--text-primary)]">{c.clientes?.nombre_completo}</td>
+                    <td className="px-4 py-5 text-sm font-black text-[var(--text-primary)]">${c.total}</td>
                     <td className="px-4 py-5">
                       <span className={`inline-flex items-center rounded-lg px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border ${c.estado === 'devuelto_ok' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'}`}>
                         {c.estado === 'devuelto_ok' ? 'Finalizado' : 'Resuelto'}
@@ -505,16 +505,6 @@ const GestionContratos = () => {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-      {/* Cabecera del Módulo */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2 flex items-center gap-3">
-          <ClipboardList className="h-7 w-7 text-[var(--color-primary)]" /> Gestión de Contratos
-        </h1>
-        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">
-          Seguimiento Operativo y Financiero de Alquileres
-        </p>
-      </div>
-
       {/* Menú de Navegación Horizontal */}
       <ModuleNavbar currentTab={currentTab} setTab={setCurrentTab} />
 

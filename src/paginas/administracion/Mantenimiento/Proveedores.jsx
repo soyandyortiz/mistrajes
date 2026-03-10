@@ -216,11 +216,6 @@ export default function Proveedores() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-       <div className="mb-8">
-           <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2">Proveedores y Afiliados</h1>
-           <p className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Gestión B2B - Abastecimiento y Socios de Valor</p>
-       </div>
-       
        <ModuleNavbar currentTab={currentTab} setTab={(t) => { if(t === 'nuevo') setFormData(initialForm); setTab(t); }} />
 
        {/* VISTA: LISTADO DE PROVEEDORES */}

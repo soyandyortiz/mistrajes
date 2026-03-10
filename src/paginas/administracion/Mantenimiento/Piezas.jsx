@@ -410,11 +410,6 @@ export default function Piezas() {
   // ──────────────────────────────────────────────
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-       <div className="mb-8">
-           <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2">Inventario de Piezas y Elementos</h1>
-           <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Gestión de Bodega - Control Individual de Tallas</p>
-       </div>
-       
        <ModuleNavbar currentTab={currentTab} setTab={(t) => { if (t === 'nueva') setFormData(initialForm); setTab(t); }} />
 
        {/* VISTA LISTADO */}
@@ -606,18 +601,18 @@ export default function Piezas() {
                         </thead>
                         <tbody className="divide-y divide-[var(--border-soft)]">
                            {formData.tallas.map((t, idx) => (
-                               <tr key={idx} className="hover:bg-white/[0.02]">
-                                   <td className="p-4 font-bold text-white">
+                               <tr key={idx} className="hover:bg-[var(--bg-surface-2)]">
+                                   <td className="p-4 font-bold text-[var(--text-primary)]">
                                        <div className="flex items-center gap-3">
-                                           <div className="w-9 h-9 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center text-[11px] font-black text-white uppercase tracking-wide">{t.talla.substring(0,2)}</div>
-                                           <span className="text-sm font-bold text-white">{t.talla}</span>
+                                           <div className="w-9 h-9 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center text-[11px] font-black text-[var(--color-primary)] uppercase tracking-wide">{t.talla.substring(0,2)}</div>
+                                           <span className="text-sm font-bold text-[var(--text-primary)]">{t.talla}</span>
                                        </div>
                                    </td>
                                   <td className="p-4 text-center">
-                                     <input 
-                                         type="number" 
+                                     <input
+                                         type="number"
                                          min="0"
-                                         className="w-24 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-center text-white font-mono font-black placeholder-white/20 focus:border-primary focus:outline-none" 
+                                         className="w-24 bg-[var(--bg-input)] border border-[var(--border-soft)] rounded-lg px-3 py-2 text-center text-[var(--text-primary)] font-mono font-black placeholder-[var(--text-muted)] focus:border-primary focus:outline-none" 
                                          value={t.stock} 
                                          onChange={e => handleStockChange(idx, e.target.value)}
                                      />
