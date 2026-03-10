@@ -670,25 +670,30 @@ const Landing = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-40 px-6">
-        <div className="max-w-5xl mx-auto relative overflow-hidden rounded-[4rem] p-16 md:p-32 text-center border border-[var(--border-soft)] bg-[var(--bg-surface-2)]">
-          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-primary-dim)] to-transparent pointer-events-none" />
-          <div className="absolute -top-20 -right-20 w-[400px] h-[400px] bg-[var(--color-primary-dim)] blur-[100px] rounded-full" />
-          <div className="relative z-10 space-y-10">
-            <h2 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-none text-[var(--text-primary)]">
-              Inicia tu propia <br /> <span className="text-gradient-guambra italic">Revolución</span>
-            </h2>
-            <p className="text-lg md:text-xl text-[var(--text-secondary)] opacity-50 max-w-xl mx-auto font-normal">
-              Únete hoy y obtén 30 días de acceso ilimitado a todas las funciones PRO. Sin compromiso.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link to="/registro-negocio" className="btn-guambra-primary !px-20 !py-6 !text-sm flex items-center gap-3">
-                Probar Demo Gratis <ArrowRight className="h-5 w-5" />
-              </Link>
+      <section className="py-16 px-6">
+        <div className="max-w-5xl mx-auto relative overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-surface-2)]">
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-primary-dim)] via-transparent to-transparent pointer-events-none" />
+          <div className="absolute -bottom-10 -right-10 w-[300px] h-[300px] bg-[var(--color-primary-dim)] blur-[80px] rounded-full" />
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 px-8 md:px-12 py-10">
+            {/* Text */}
+            <div className="space-y-2 text-center md:text-left">
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--color-primary)]">30 días gratis · Sin compromiso</p>
+              <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-none text-[var(--text-primary)]">
+                Inicia tu propia <span className="text-gradient-guambra italic">Revolución</span>
+              </h2>
+              <p className="text-sm text-[var(--text-secondary)] opacity-60 max-w-sm font-normal">
+                Acceso ilimitado a todas las funciones PRO desde el primer día.
+              </p>
             </div>
-            <div className="pt-10 flex items-center justify-center gap-8 opacity-30">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]"><ShieldCheck className="h-3 w-3" /> SSL 256-bit</div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]"><Zap className="h-3 w-3" /> Alta Disponibilidad</div>
+            {/* Actions */}
+            <div className="flex flex-col items-center gap-3 shrink-0">
+              <Link to="/registro-negocio" className="btn-guambra-primary !px-10 !py-4 !text-sm flex items-center gap-2 whitespace-nowrap">
+                Probar Demo Gratis <ArrowRight className="h-4 w-4" />
+              </Link>
+              <div className="flex items-center gap-5 opacity-30">
+                <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)]"><ShieldCheck className="h-3 w-3" /> SSL 256-bit</div>
+                <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)]"><Zap className="h-3 w-3" /> Alta Disponibilidad</div>
+              </div>
             </div>
           </div>
         </div>

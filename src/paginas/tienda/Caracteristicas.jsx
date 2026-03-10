@@ -250,26 +250,28 @@ const Caracteristicas = () => {
         </section>
 
         {/* Final Call to Action */}
-        <div className="mt-40 relative group">
-          <div className="absolute inset-0 bg-[var(--color-primary-dim)] blur-[150px] rounded-full opacity-30 group-hover:opacity-40 transition-opacity" />
-          <div className="relative overflow-hidden rounded-[4rem] p-16 md:p-32 text-center border border-[var(--border-soft)] bg-[var(--bg-surface-2)] shadow-2xl">
-            <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-              <Store className="h-64 w-64 text-[var(--text-primary)]" />
+        <div className="mt-16 relative">
+          <div className="relative overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-surface-2)]">
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-primary-dim)] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute -bottom-10 -right-10 w-[300px] h-[300px] bg-[var(--color-primary-dim)] blur-[80px] rounded-full" />
+            <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+              <Store className="h-40 w-40 text-[var(--text-primary)]" />
             </div>
-            
-            <div className="relative z-10 space-y-12">
-              <h2 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-none text-[var(--text-primary)]">
-                ¿Listo para <br /> <span className="text-gradient-guambra italic">Simplificar</span> tu Vida?
-              </h2>
-              <p className="text-lg md:text-xl text-[var(--text-secondary)] opacity-70 max-w-2xl mx-auto leading-relaxed">
-                Únete a la nueva era de gestión multitenant. Activa tu demo hoy y experimenta el control total sin complicaciones técnicas.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
-                <Link to="/registro-negocio" className="btn-guambra-primary !px-16 !py-6 !text-sm flex items-center gap-4 group/btn">
-                  Probar Demo Gratis 
-                  <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-2 transition-transform" />
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 px-8 md:px-12 py-10">
+              <div className="space-y-2 text-center md:text-left">
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--color-primary)]">Demo gratis · Sin complicaciones técnicas</p>
+                <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-none text-[var(--text-primary)]">
+                  ¿Listo para <span className="text-gradient-guambra italic">Simplificar</span> tu Vida?
+                </h2>
+                <p className="text-sm text-[var(--text-secondary)] opacity-60 max-w-sm font-normal">
+                  Activa tu demo hoy y experimenta el control total desde el primer día.
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-3 shrink-0">
+                <Link to="/registro-negocio" className="btn-guambra-primary !px-10 !py-4 !text-sm flex items-center gap-2 whitespace-nowrap">
+                  Probar Demo Gratis <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link to="/tutoriales" className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                <Link to="/tutoriales" className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                   Explorar Guías de Uso
                 </Link>
               </div>

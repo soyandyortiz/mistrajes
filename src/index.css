@@ -473,6 +473,8 @@
     background-clip: text;
     color: transparent !important;
     font-weight: 900 !important;
+    padding-right: 0.25em;
+    margin-right: -0.25em;
   }
 
   /* ─── Custom scrollbar (thin, glass-style) ─── */
