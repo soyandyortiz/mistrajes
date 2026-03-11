@@ -18,8 +18,9 @@ const PublicNavbar = () => {
 
   const navLinks = [
     { name: 'Inicio', path: '/' },
-    { name: 'Tutoriales', path: '/tutoriales' },
     { name: 'Características', path: '/caracteristicas' },
+    { name: 'Precios', path: '/precios' },
+    { name: 'Tutoriales', path: '/tutoriales' },
   ];
 
   const isActive = (path) => location.pathname === path;

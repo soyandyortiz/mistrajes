@@ -15,9 +15,9 @@
     --bg-input: #0d0d18; /* Fondo de inputs y selects */
 
     /* — TEXTOS — */
-    --text-primary: #eeeeff; /* Texto principal — blanco frío */
-    --text-secondary: #9090b8; /* Texto secundario — gris violáceo */
-    --text-muted: #50507a; /* Placeholders, notas, info terciaria */
+    --text-primary: #ffffff; /* Texto principal — blanco puro */
+    --text-secondary: #dcdcf8; /* Texto secundario — casi blanco violáceo */
+    --text-muted: #ababcc; /* Placeholders, notas, info terciaria */
     --text-inverse: #080810; /* Texto sobre botones claros */
 
     /* — BORDES — */
@@ -90,9 +90,9 @@
     --bg-input: #f0f0fa; /* Inputs */
 
     /* — TEXTOS — */
-    --text-primary: #111128; /* Casi negro con tinte índigo — muy legible */
-    --text-secondary: #44446e; /* Gris-índigo — subtítulos y descripciones */
-    --text-muted: #8888aa; /* Placeholders */
+    --text-primary: #000000; /* Negro puro — máximo contraste */
+    --text-secondary: #0e0e30; /* Índigo casi negro — subtítulos y descripciones */
+    --text-muted: #303055; /* Índigo oscuro — placeholders */
     --text-inverse: #ffffff; /* Texto sobre botones de color */
 
     /* — BORDES — */
@@ -594,11 +594,16 @@ input[type="month"]::-webkit-calendar-picker-indicator {
 
 /* ── Estilos para contenido HTML renderizado en la página pública ── */
 
+/* Base: cubre divs sueltos que genera Chrome con contentEditable */
+.tutorial-content,
+.tutorial-content * {
+  color: var(--text-secondary);
+}
 .tutorial-content h1 {
   font-size: 1.5rem;
   font-weight: 900;
   letter-spacing: -0.03em;
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   margin: 0.75em 0 0.4em;
   line-height: 1.2;
 }
@@ -606,7 +611,7 @@ input[type="month"]::-webkit-calendar-picker-indicator {
   font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   margin: 0.65em 0 0.35em;
   line-height: 1.25;
 }
@@ -614,7 +619,8 @@ input[type="month"]::-webkit-calendar-picker-indicator {
   margin: 0.4em 0;
   color: var(--text-secondary);
 }
-.tutorial-content strong { font-weight: 700; color: var(--text-primary); }
+.tutorial-content strong,
+.tutorial-content b { font-weight: 700; color: var(--text-primary) !important; }
 .tutorial-content em     { font-style: italic; }
 .tutorial-content u      { text-decoration: underline; }
 .tutorial-content ul {

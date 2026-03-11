@@ -354,16 +354,6 @@ export default function Categorias() {
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-      {/* Cabecera */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2 flex items-center gap-3">
-          <Tag className="h-7 w-7 text-[var(--color-primary)]" /> Categorías y Subcategorías
-        </h1>
-        <p className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">
-          Organización de Productos y Piezas/Elementos del Catálogo
-        </p>
-      </div>
-
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[

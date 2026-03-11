@@ -416,49 +416,99 @@ export default function NuevoContrato({ onVolver }) {
 
   const handleGuardarContrato = async () => {
     if (guardando) return;
+
+    // ── Validaciones previas al guardado ──────────────────────
+    const nombreCliente = (clientType === 'natural' ? cliente.nombres : cliente.razon_social) || cliente.nombres || '';
+    if (!cliente.identificacion?.trim()) {
+      toast.error('La identificación del cliente es obligatoria.');
+      setStep(1);
+      return;
+    }
+    if (!nombreCliente.trim()) {
+      toast.error('El nombre del cliente es obligatorio.');
+      setStep(1);
+      return;
+    }
+    if (!fechas.fecha_salida_date) {
+      toast.error('La fecha de salida es obligatoria.');
+      setStep(2);
+      return;
+    }
+    if (!fechas.fecha_devolucion_date) {
+      toast.error('La fecha de devolución es obligatoria.');
+      setStep(2);
+      return;
+    }
+    if (productosCarrito.length === 0) {
+      toast.error('Debes agregar al menos un producto al contrato.');
+      setStep(3);
+      return;
+    }
+    if (!todosConfirmados) {
+      toast.error('Confirma todos los productos y sus tallas antes de guardar.');
+      setStep(3);
+      return;
+    }
+    if (!metodoPago) {
+      toast.error('El método de pago del anticipo es obligatorio.');
+      setStep(4);
+      return;
+    }
+    const anticipoValidado = parseFloat(montoAnticipo);
+    if (!anticipoValidado || anticipoValidado <= 0) {
+      toast.error('El monto del anticipo debe ser mayor a $0.');
+      setStep(4);
+      return;
+    }
+
     setGuardando(true);
     try {
       const subTotalCalc = diasAlquiler > 1 ? (parseFloat(subtotalAlquiler) || subtotalBase) : subtotalBase;
-      const totalCalc = subTotalCalc - descuento;
+      const totalCalc = Math.max(0, subTotalCalc - descuento);
       const anticipoCalc = totalCalc * 0.5;
       const montoAnticipoParsed = parseFloat(montoAnticipo) || anticipoCalc;
+
+      // Determinar tipo_garantia: solo enviar si hay un tipo válido seleccionado
+      const tipoGarantiaPayload = garantia.tipo === 'Física' ? 'fisica'
+        : garantia.tipo === 'Económica' ? 'economica'
+        : null;
 
       const payload = {
         tenant_id: profile.tenant_id,
         creado_por: profile.id,
         cliente: {
           tipo_entidad: clientType === 'empresa' ? 'empresa' : 'natural',
-          nombre_completo: (clientType === 'natural' ? cliente.nombres : cliente.razon_social) || cliente.nombres || 'Sin nombre',
-          identificacion: cliente.identificacion,
-          email: cliente.email || null,
-          whatsapp: cliente.telefono || null,
-          direccion_domicilio: cliente.direccion || '',
-          ciudad: cliente.ciudad || '',
-          provincia: cliente.provincia || null,
+          nombre_completo: nombreCliente,
+          identificacion: cliente.identificacion.trim(),
+          email: cliente.email?.trim() || null,
+          whatsapp: cliente.telefono?.trim() || null,
+          direccion_domicilio: cliente.direccion?.trim() || null,
+          ciudad: cliente.ciudad?.trim() || null,
+          provincia: cliente.provincia?.trim() || null,
           pais: cliente.pais || 'Ecuador'
         },
         contrato: {
           tipo_envio: fechas.tipo_entrega === 'Envío' ? 'envio' : 'retiro',
-          fecha_salida: fechaSalidaFull || new Date().toISOString(),
+          fecha_salida: fechaSalidaFull,
           fecha_evento: fechaEventoFull || null,
-          fecha_devolucion: fechaDevolucionFull || new Date().toISOString(),
+          fecha_devolucion: fechaDevolucionFull,
           dias_alquiler: diasAlquiler,
-          precio_por_dia: diasAlquiler > 1 ? (parseFloat(precioPorDia) || subtotalBase) : subtotalBase,
-          subtotal_alquiler: subTotalCalc,
+          precio_por_dia: diasAlquiler > 1 ? (parseFloat(precioPorDia) || subtotalBase) : null,
+          subtotal_alquiler: diasAlquiler > 1 ? subTotalCalc : null,
           fecha_devolucion_modificada: devolucionModificada,
           subtotal: subTotalCalc,
           monto_descuento: descuento,
           total: totalCalc,
-          tipo_garantia: garantia.tipo === 'Física' ? 'fisica' : 'economica',
-          descripcion_garantia: garantia.descripcion || null,
-          codigo_cupon: cupon || null,
+          tipo_garantia: tipoGarantiaPayload,
+          descripcion_garantia: garantia.descripcion?.trim() || null,
+          codigo_cupon: cupon?.trim() || null,
           descuento_cupon: descuento
         },
         productos: productosCarrito.map(prod => ({
           id: prod.id,
           nombre: prod.nombre,
           cantidad_total: prod.cantidad_total,
-          precio_unitario: prod.precio_unitario,
+          precio_unitario: Number(prod.precio_unitario),
           piezas: prod.piezas.map(pz => ({
             id: pz.id,
             nombre: pz.nombre,
@@ -467,23 +517,32 @@ export default function NuevoContrato({ onVolver }) {
         })),
         pago_anticipo: {
           monto: montoAnticipoParsed,
-          metodo_pago: metodoPago || 'No especificado',
-          notas: `Anticipo registrado al crear contrato. Método: ${metodoPago || 'No especificado'}`,
+          metodo_pago: metodoPago,
+          notas: `Anticipo al crear contrato — Método: ${metodoPago}`,
           nombre_registrador_snapshot: profile.nombre_completo || 'Empleado'
         }
       };
 
       const { data, error } = await supabase.rpc('crear_contrato_completo', { payload });
 
-      if (error) throw error;
-      
-      if (!data || !data.success) {
-        throw new Error(data?.error || 'Error desconocido al crear el contrato');
+      if (error) {
+        // Errores de red o de autenticación
+        throw new Error(error.message || 'Error de conexión al guardar el contrato');
+      }
+
+      if (!data) {
+        throw new Error('La operación no devolvió respuesta. Verifica la conexión.');
+      }
+
+      if (!data.success) {
+        // Error controlado devuelto por la RPC (RAISE EXCEPTION capturado)
+        const msg = data.error || 'Error desconocido al crear el contrato';
+        throw new Error(msg);
       }
 
       setContratoId(data.contrato_id);
       setContratoGuardado(true);
-      toast.success(`¡Contrato guardado! Estado: Reservado. Anticipo $${montoAnticipoParsed.toFixed(2)} registrado.`);
+      toast.success(`¡Contrato creado! Estado: Reservado. Anticipo $${montoAnticipoParsed.toFixed(2)} registrado.`);
     } catch (e) {
       console.error('Error guardando contrato:', e);
       toast.error(e.message || 'Error inesperado al guardar el contrato');
@@ -1323,7 +1382,7 @@ export default function NuevoContrato({ onVolver }) {
                      <div className="animate-in slide-in-from-right-4 duration-300 flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full text-center">
                         <CheckCircle2 className="w-24 h-24 text-primary mb-6 drop-shadow-[0_0_30px_rgba(255,107,0,0.5)]" />
                         <h2 className="text-4xl font-black uppercase tracking-tighter text-[var(--text-primary)] mb-4">Todo Listo</h2>
-                        <p className="text-sm text-[var(--text-secondary)] font-medium mb-12 max-w-md mx-auto">Revisa rápidamente los detalles. Al guardar, el contrato se registrará como <strong className="text-amber-400">Pendiente de Pago</strong>.</p>
+                        <p className="text-sm text-[var(--text-secondary)] font-medium mb-12 max-w-md mx-auto">Revisa rápidamente los detalles. Al guardar, el contrato quedará como <strong className="text-amber-400">Reservado</strong> y el anticipo se registrará automáticamente.</p>
                      
                         {!contratoGuardado ? (
                             <div className="grid grid-cols-2 gap-4 w-full">
@@ -1342,7 +1401,9 @@ export default function NuevoContrato({ onVolver }) {
                             <div className="w-full space-y-6 animate-in slide-in-from-bottom-8 duration-500">
                                 <div className="p-6 bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-2xl flex flex-col gap-4">
                                    <div className="flex flex-col sm:flex-row gap-4">
-                                      <button className="btn-guambra-primary !py-4 h-16 flex-1 text-sm flex items-center justify-center gap-2 group bg-blue-600 hover:bg-blue-500 border-none shadow-blue-500/20 shadow-xl">
+                                      <button
+                                        onClick={() => contratoId && toast.info(`Contrato ID: ${contratoId.substring(0, 8).toUpperCase()} — Impresión disponible próximamente.`)}
+                                        className="btn-guambra-primary !py-4 h-16 flex-1 text-sm flex items-center justify-center gap-2 group bg-blue-600 hover:bg-blue-500 border-none shadow-blue-500/20 shadow-xl">
                                          <Printer className="w-5 h-5"/> Imprimir Contrato (PDF)
                                       </button>
                                       <button onClick={() => {toast.success('Pago confirmado y notificado por WhatsApp'); setTimeout(() => onVolver?.(), 1500)}} className="btn-guambra-primary !py-4 h-16 flex-1 text-sm flex items-center justify-center gap-2 group">

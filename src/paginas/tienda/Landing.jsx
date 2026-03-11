@@ -589,7 +589,7 @@ const Landing = () => {
               <ShoppingBag className="h-7 w-7 text-[var(--color-primary)]" />
             </div>
             <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.9] text-[var(--text-primary)]">
-              Tu Catálogo en la <span className="italic">Vitrina Digital</span>
+              Tu Catálogo en la <span className="italic text-gradient-guambra">Vitrina Digital</span>
             </h2>
             <p className="text-lg md:text-xl text-[var(--text-secondary)] opacity-50 leading-relaxed font-normal max-w-xl">
               Crea tus productos una sola vez y publícalos directamente en tu tienda online. Tus clientes verán disponibilidad en tiempo real y podrán apartar desde cualquier dispositivo.

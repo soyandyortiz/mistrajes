@@ -383,7 +383,7 @@ const Tutoriales = () => {
                     <p className="text-[9px] font-black uppercase tracking-[0.35em] text-[var(--color-primary)]">Resumen</p>
                     <div className="h-px bg-[var(--border-soft)]" />
                     <div
-                      className="tutorial-content border-l-2 border-[var(--color-primary-dim)] pl-5 text-sm leading-relaxed"
+                      className="tutorial-content border-l-2 border-[var(--color-primary-dim)] pl-5 text-sm leading-relaxed text-[var(--text-secondary)]"
                       dangerouslySetInnerHTML={{ __html: selectedLesson.descripcion_html }}
                     />
                   </div>

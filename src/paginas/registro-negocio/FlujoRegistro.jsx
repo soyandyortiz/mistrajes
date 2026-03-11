@@ -13,8 +13,8 @@ const FlujoRegistro = () => {
   const currentStep = useRegistroNegocioStore((state) => state.currentStep);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] flex flex-col py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[var(--color-primary-dim)] via-[var(--bg-page)] to-[var(--bg-page)]"></div>
+    <div className="min-h-screen text-[var(--text-primary)] flex flex-col py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,_var(--color-primary-dim),_transparent)]"></div>
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md mb-12 text-center relative z-10">
         <div className="inline-block px-4 py-1.5 rounded-full bg-[var(--color-primary-dim)] border border-[var(--border-soft)] text-[10px] font-bold text-[var(--color-primary)] mb-6 tracking-[0.4em] uppercase">

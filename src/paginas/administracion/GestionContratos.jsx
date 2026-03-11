@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search } from 'lucide-react';
+import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import NuevoContratoView from './Operaciones/NuevoContrato';
 
@@ -36,6 +36,10 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
   const [isAbonoOpen, setIsAbonoOpen] = useState(false);
   const [isAnularOpen, setIsAnularOpen] = useState(false);
   const [contratoActivo, setContratoActivo] = useState(null);
+  const [isVerOpen, setIsVerOpen] = useState(false);
+  const [detalleItems, setDetalleItems] = useState([]);
+  const [detallePagos, setDetallePagos] = useState([]);
+  const [detalleLoading, setDetalleLoading] = useState(false);
   const [garantiaForm, setGarantiaForm] = useState('');
   const [notasDevolucion, setNotasDevolucion] = useState('');
   const [montoAbono, setMontoAbono] = useState('');
@@ -48,7 +52,7 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
     try {
       const { data, error } = await supabase
         .from('contratos')
-        .select('*, clientes(nombre_completo, identificacion)')
+        .select('*, clientes(nombre_completo, identificacion), items_contrato(nombre_item)')
         .eq('tenant_id', profile.tenant_id)
         // Solo contratos activos: reservado o entregado. Nunca pendiente_pago
         .in('estado', ['reservado', 'entregado'])
@@ -56,7 +60,7 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
         .order('created_at', { ascending: false });
       if (error) throw error;
       setContratos(data);
-    } catch (e) {
+    } catch {
       toast.error('Error al obtener contratos');
     } finally {
       setLoading(false);
@@ -68,15 +72,55 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
     else if (!authLoading && !profile?.tenant_id) setLoading(false);
   }, [authLoading, profile?.tenant_id]);
 
-  const abrirModalEntrega = (c) => { setContratoActivo(c); setGarantiaForm(c.garantia_fisica || ''); setIsEntregaOpen(true); };
+  const abrirVerDetalle = async (c) => {
+    setContratoActivo(c);
+    setIsVerOpen(true);
+    setDetalleLoading(true);
+    try {
+      const [{ data: items }, { data: pagos }] = await Promise.all([
+        supabase
+          .from('items_contrato')
+          .select('*, tallas:items_contrato_tallas(etiqueta_talla, cantidad, nombre_pieza_snapshot)')
+          .eq('contrato_id', c.id)
+          .order('created_at'),
+        supabase
+          .from('pagos_contrato')
+          .select('*')
+          .eq('contrato_id', c.id)
+          .order('registrado_en'),
+      ]);
+      setDetalleItems(items || []);
+      setDetallePagos(pagos || []);
+    } catch { toast.error('Error cargando detalle del contrato'); }
+    finally { setDetalleLoading(false); }
+  };
+
+  const abrirModalEntrega = (c) => { setContratoActivo(c); setGarantiaForm(c.descripcion_garantia || ''); setIsEntregaOpen(true); };
   const abrirModalDevolucion = (c) => { setContratoActivo(c); setNotasDevolucion(''); setIsDevolucionOpen(true); };
 
   const confirmarEntrega = async (e) => {
     e.preventDefault();
     try {
+      // Al confirmar entrega se registra el cobro del saldo pendiente como pago
+      // y se actualiza la garantía física en descripcion_garantia.
+      // El trigger trg_actualizar_balance_contrato se encarga de recalcular anticipo_pagado y saldo_pendiente.
+      const saldoPendiente = Number(contratoActivo.saldo_pendiente || 0);
+      if (saldoPendiente > 0) {
+        const { error: pagoErr } = await supabase.from('pagos_contrato').insert({
+          contrato_id: contratoActivo.id,
+          tenant_id: profile.tenant_id,
+          monto: saldoPendiente,
+          tipo_pago: 'saldo',
+          notas: `Pago del saldo restante al entregar. Garantía: ${garantiaForm}`,
+          registrado_por: profile.id,
+          nombre_registrador_snapshot: profile.nombre_completo || 'Empleado',
+          registrado_en: new Date().toISOString(),
+        });
+        if (pagoErr) throw pagoErr;
+      }
       const { error } = await supabase.from('contratos').update({
-        estado: 'entregado', saldo_pendiente: 0,
-        anticipo_pagado: contratoActivo.total, garantia_fisica: garantiaForm
+        estado: 'entregado',
+        descripcion_garantia: garantiaForm || contratoActivo.descripcion_garantia,
       }).eq('id', contratoActivo.id);
       if (error) throw error;
       toast.success('Traje Entregado y Saldo Cobrado!');
@@ -176,8 +220,11 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
     return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-soft)]">Manual</span>;
   };
 
+  // codigo_contrato no existe en BD; se usa el prefijo del UUID como código visual
+  const getCodigoContrato = (c) => `TX-${(c.id || '').substring(0, 8).toUpperCase()}`;
+
   const filterData = contratos.filter(c =>
-    c.codigo_contrato?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getCodigoContrato(c).toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.clientes?.nombre_completo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -207,7 +254,8 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
             <thead className="bg-[var(--bg-surface-2)]">
               <tr>
                 <th className="py-5 pl-8 pr-4 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Cliente</th>
-                <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Fechas</th>
+                <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Salida / Devolución</th>
+                <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Productos</th>
                 <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Total / Saldo</th>
                 <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Estado</th>
                 <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Origen</th>
@@ -216,9 +264,9 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
             </thead>
             <tbody className="divide-y divide-[var(--border-soft)]">
               {loading ? (
-                <tr><td colSpan="6" className="py-12 text-center"><Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" /></td></tr>
+                <tr><td colSpan="7" className="py-12 text-center"><Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" /></td></tr>
               ) : filterData.length === 0 ? (
-                <tr><td colSpan="6" className="py-12 text-center text-xs text-[var(--text-muted)] tracking-widest uppercase font-bold">No hay contratos activos</td></tr>
+                <tr><td colSpan="7" className="py-12 text-center text-xs text-[var(--text-muted)] tracking-widest uppercase font-bold">No hay contratos activos</td></tr>
               ) : filterData.map((contract) => (
                 <tr key={contract.id} className="hover:bg-[var(--bg-surface-2)] transition-all duration-200 group">
                   <td className="whitespace-nowrap py-5 pl-8 pr-4">
@@ -232,9 +280,16 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-5 text-xs text-[var(--text-secondary)] font-bold">
-                    <span className="block">{contract.fecha_salida ? new Date(contract.fecha_salida).toLocaleDateString() : '—'}</span>
-                    <span className="text-[9px] opacity-60">Dev: {contract.fecha_devolucion ? new Date(contract.fecha_devolucion).toLocaleDateString() : '—'}</span>
+                  <td className="px-4 py-5 text-xs text-[var(--text-secondary)] font-bold whitespace-nowrap">
+                    <span className="block">{contract.fecha_salida ? new Date(contract.fecha_salida).toLocaleString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}</span>
+                    <span className="text-[9px] opacity-60 block mt-0.5">Dev: {contract.fecha_devolucion ? new Date(contract.fecha_devolucion).toLocaleString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}</span>
+                  </td>
+                  <td className="px-4 py-5 max-w-[200px]">
+                    <p className="text-xs text-[var(--text-secondary)] font-bold leading-snug line-clamp-2">
+                      {contract.items_contrato?.length > 0
+                        ? contract.items_contrato.map(i => i.nombre_item).join(', ')
+                        : <span className="text-[var(--text-muted)] italic">Sin productos</span>}
+                    </p>
                   </td>
                   <td className="px-4 py-5">
                     <span className="text-sm font-black text-[var(--text-primary)]">${Number(contract.total || 0).toFixed(2)}</span>
@@ -245,6 +300,9 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                   <td className="px-4 py-5">{getOrigenBadge(contract.canal)}</td>
                   <td className="relative whitespace-nowrap py-5 pl-4 pr-8 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => abrirVerDetalle(contract)} className="p-2 rounded-lg bg-[var(--color-primary-dim)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white border border-[var(--color-primary)]/20 transition-all" title="Ver detalle">
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
                       {contract.estado === 'reservado' && (
                         <button onClick={() => abrirModalEntrega(contract)} className="btn-guambra-primary !py-2 !px-3 !text-[9px] inline-flex items-center gap-1">
                           <Play className="h-3 w-3" /> Entregar
@@ -348,6 +406,162 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
         </div>
       )}
 
+      {/* ── Modal VER DETALLE ──────────────────────────────────────── */}
+      {isVerOpen && contratoActivo && (
+        <div className="fixed inset-0 z-[200] flex items-start justify-center lg:pl-72 pt-20 px-6 pb-6 overflow-y-auto bg-[var(--bg-page)]/85 backdrop-blur-md">
+          <div className="glass-card w-full max-w-4xl animate-in zoom-in-95 shadow-2xl">
+
+            {/* Cabecera */}
+            <div className="flex items-center justify-between px-7 py-4 border-b border-[var(--border-soft)]">
+              <div className="flex items-center gap-4">
+                <p className="font-mono font-black text-[var(--color-primary)] text-base tracking-tight">{getCodigoContrato(contratoActivo)}</p>
+                {getStatusBadge(contratoActivo.estado)}
+                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold hidden sm:block">Detalle del Contrato</span>
+              </div>
+              <button onClick={() => setIsVerOpen(false)} className="p-2 rounded-xl hover:bg-[var(--bg-surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Cuerpo */}
+            {detalleLoading ? (
+              <div className="flex justify-center py-14"><Loader2 className="h-7 w-7 animate-spin text-[var(--color-primary)]" /></div>
+            ) : (
+              <div className="p-6 space-y-4">
+
+                {/* Fila 1: Cliente | Fechas | Financiero */}
+                <div className="grid grid-cols-3 gap-4">
+
+                  {/* Cliente */}
+                  <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)] space-y-1">
+                    <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5"/>Cliente
+                    </p>
+                    <p className="font-black text-[var(--text-primary)] text-sm leading-snug">{contratoActivo.clientes?.nombre_completo || '—'}</p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono">{contratoActivo.clientes?.identificacion || '—'}</p>
+                    <div className="mt-3 pt-3 border-t border-[var(--border-soft)] grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-0.5">Días alquiler</p>
+                        <p className="text-sm font-black text-[var(--text-primary)]">{contratoActivo.dias_alquiler ?? 1}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-0.5">Tipo entrega</p>
+                        <p className="text-sm font-black text-[var(--text-primary)] capitalize">{contratoActivo.tipo_envio || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fechas */}
+                  <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)]">
+                    <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5"/>Fechas
+                    </p>
+                    <div className="space-y-3">
+                      {[
+                        ['Salida',     contratoActivo.fecha_salida],
+                        ['Evento',     contratoActivo.fecha_evento],
+                        ['Devolución', contratoActivo.fecha_devolucion],
+                      ].map(([lbl, val]) => (
+                        <div key={lbl}>
+                          <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-0.5">{lbl}</p>
+                          {val ? (
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-sm font-black text-[var(--text-primary)]">
+                                {new Date(val).toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })}
+                              </span>
+                              <span className="text-xs text-[var(--text-muted)] font-bold">
+                                {new Date(val).toLocaleTimeString('es-EC', { hour:'2-digit', minute:'2-digit' })}
+                              </span>
+                            </div>
+                          ) : <span className="text-sm font-bold text-[var(--text-muted)]">—</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Financiero + Pagos + Garantía */}
+                  <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)]">
+                    <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <CreditCard className="h-3.5 w-3.5"/>Financiero
+                    </p>
+                    <div className="space-y-2">
+                      {[
+                        ['Subtotal',   `$${Number(contratoActivo.subtotal || 0).toFixed(2)}`],
+                        ['Descuento',  `$${Number(contratoActivo.monto_descuento || 0).toFixed(2)}`],
+                        ['Total',      `$${Number(contratoActivo.total || 0).toFixed(2)}`, true],
+                        ['Anticipo',   `$${Number(contratoActivo.anticipo_pagado || 0).toFixed(2)}`],
+                        ['Saldo',      `$${Number(contratoActivo.saldo_pendiente || 0).toFixed(2)}`, false, Number(contratoActivo.saldo_pendiente) > 0],
+                      ].map(([lbl, val, bold, warn]) => (
+                        <div key={lbl} className={`flex justify-between items-center text-xs ${bold ? 'border-t border-[var(--border-soft)] pt-2 mt-1' : ''}`}>
+                          <span className="text-[var(--text-secondary)]">{lbl}</span>
+                          <span className={`font-black ${bold ? 'text-[var(--text-primary)] text-sm' : warn ? 'text-red-400' : 'text-[var(--text-primary)]'}`}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {detallePagos.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-[var(--border-soft)]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Pagos registrados</p>
+                        <div className="space-y-1.5">
+                          {detallePagos.map(p => (
+                            <div key={p.id} className="flex justify-between items-center text-xs">
+                              <span className="text-[var(--text-secondary)] capitalize">{p.tipo_pago}</span>
+                              <span className="font-black text-green-400">${Number(p.monto).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(contratoActivo.tipo_garantia || contratoActivo.descripcion_garantia) && (
+                      <div className="mt-3 pt-3 border-t border-[var(--border-soft)]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 flex items-center gap-1">
+                          <ShieldCheck className="h-3 w-3"/>Garantía
+                        </p>
+                        <p className="text-xs font-black text-[var(--text-primary)] capitalize">{contratoActivo.tipo_garantia || '—'}</p>
+                        {contratoActivo.descripcion_garantia && (
+                          <p className="text-xs text-[var(--text-secondary)] mt-0.5">{contratoActivo.descripcion_garantia}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Fila 2: Productos y Tallas */}
+                <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)]">
+                  <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5"/>Productos y Tallas
+                  </p>
+                  {detalleItems.length === 0 ? (
+                    <p className="text-sm text-[var(--text-muted)] italic">Sin items registrados</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {detalleItems.map(item => (
+                        <div key={item.id} className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border-soft)]">
+                          <div className="flex justify-between items-start gap-3">
+                            <p className="font-black text-[var(--text-primary)] text-sm leading-tight">{item.nombre_item}</p>
+                            <p className="text-xs font-black text-[var(--color-primary)] shrink-0">${Number(item.precio_unitario).toFixed(2)}</p>
+                          </div>
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1">Cantidad: {item.cantidad}</p>
+                          {item.tallas?.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {item.tallas.map((t, i) => (
+                                <span key={i} className="inline-flex items-center gap-1 bg-[var(--color-primary-dim)] text-[var(--color-primary)] border border-[var(--color-primary)]/20 px-2 py-0.5 rounded-lg text-[10px] font-black">
+                                  {t.nombre_pieza_snapshot}: <span className="uppercase">{t.etiqueta_talla}</span> ×{t.cantidad}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Modal Anular Contrato */}
       {isAnularOpen && contratoActivo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-page)]/80 backdrop-blur-md">
@@ -419,9 +633,9 @@ const ContratosProblemasView = () => {
               <tbody className="divide-y divide-[var(--border-soft)]">
                 {contratos.map(c => (
                   <tr key={c.id} className="hover:bg-[var(--bg-surface-2)] transition-all">
-                    <td className="py-5 pl-8 font-mono font-black text-red-400 text-sm">{c.codigo_contrato}</td>
+                    <td className="py-5 pl-8 font-mono font-black text-red-400 text-sm">{`TX-${(c.id || '').substring(0, 8).toUpperCase()}`}</td>
                     <td className="px-4 py-5 text-sm font-bold text-[var(--text-primary)]">{c.clientes?.nombre_completo}</td>
-                    <td className="px-4 py-5 text-xs text-[var(--text-secondary)]">{c.notas || '—'}</td>
+                    <td className="px-4 py-5 text-xs text-[var(--text-secondary)]">{c.notas_internas || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -480,9 +694,9 @@ const HistorialView = () => {
               <tbody className="divide-y divide-[var(--border-soft)]">
                 {contratos.map(c => (
                   <tr key={c.id} className="hover:bg-[var(--bg-surface-2)] transition-all">
-                    <td className="py-5 pl-8 font-mono font-black text-primary text-sm">{c.codigo_contrato}</td>
+                    <td className="py-5 pl-8 font-mono font-black text-primary text-sm">{`TX-${(c.id || '').substring(0, 8).toUpperCase()}`}</td>
                     <td className="px-4 py-5 text-sm font-bold text-[var(--text-primary)]">{c.clientes?.nombre_completo}</td>
-                    <td className="px-4 py-5 text-sm font-black text-[var(--text-primary)]">${c.total}</td>
+                    <td className="px-4 py-5 text-sm font-black text-[var(--text-primary)]">${Number(c.total || 0).toFixed(2)}</td>
                     <td className="px-4 py-5">
                       <span className={`inline-flex items-center rounded-lg px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border ${c.estado === 'devuelto_ok' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'}`}>
                         {c.estado === 'devuelto_ok' ? 'Finalizado' : 'Resuelto'}
