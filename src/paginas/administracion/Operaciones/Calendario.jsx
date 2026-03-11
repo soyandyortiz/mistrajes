@@ -44,10 +44,9 @@ export default function Calendario() {
 
           // Transformar los datos reales para la UI
           const transformedList = list.map(c => {
-              // Convertir fecha UTC a local para graficar correctamente
-              const localDate = new Date(c.fecha_salida);
-              const fechaIsoLocal = new Date(localDate.getTime() - (localDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-              const horaIsoLocal = c.fecha_salida ? localDate.toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'}) : '00:00';
+              // Las fechas se almacenan como "hora local como UTC" — leer directamente del string ISO
+              const fechaIsoLocal = c.fecha_salida ? c.fecha_salida.slice(0, 10) : '';
+              const horaIsoLocal  = c.fecha_salida ? c.fecha_salida.slice(11, 16) : '00:00';
 
               // Concatenar nombre de cliente
               const nombreCliente = c.cliente ? (c.cliente.nombre_completo || 'Cliente Sin Nombre') : 'Cliente Desconocido';

@@ -50,7 +50,7 @@ const Caja = () => {
       // 1. Fetch ingresos de hoy (column 'registrado_en' is the timestamp)
       const { data: ingresosData, error: errIng } = await supabase
         .from('ingresos')
-        .select('*')
+        .select('*, pagos_contrato(referencia, tipo_pago)')
         .eq('tenant_id', profile.tenant_id)
         .gte('registrado_en', startISO)
         .lte('registrado_en', endISO)
@@ -65,7 +65,8 @@ const Caja = () => {
           tipo: 'ingreso',
           concepto: ing.descripcion || 'Ingreso registrado',
           monto: Number(ing.monto || 0),
-          metodo_pago: ing.metodo_pago || 'Efectivo',
+          metodo_pago: ing.pagos_contrato?.referencia || (ing.es_manual ? 'Manual/Otro' : '—'),
+          contrato_id: ing.contrato_id,
           created_at: ing.registrado_en || ing.created_at,
           fuente: 'ingresos'
         })));
@@ -285,35 +286,47 @@ const Caja = () => {
           <table className="w-full text-left text-sm">
             <thead className="bg-[var(--bg-surface-2)] border-b border-[var(--border-soft)] text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
               <tr>
-                <th className="px-6 py-4">Fecha / Hora</th>
-                <th className="px-6 py-4">Concepto / Descripción</th>
-                <th className="px-6 py-4">Método / Canal</th>
-                <th className="px-6 py-4 text-right">Monto</th>
+                <th className="px-4 py-4 w-20">Hora</th>
+                <th className="px-4 py-4">Motivo / Concepto</th>
+                <th className="px-4 py-4">Vía de Pago</th>
+                <th className="px-4 py-4 hidden md:table-cell">Contrato</th>
+                <th className="px-4 py-4 text-right">Monto</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-soft)]">
               {loading ? (
-                <tr><td colSpan="4" className="px-6 py-12 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></td></tr>
+                <tr><td colSpan="5" className="px-6 py-12 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></td></tr>
               ) : movimientos.length === 0 ? (
-                <tr><td colSpan="4" className="px-6 py-12 text-center text-[var(--text-muted)] text-xs tracking-widest uppercase font-bold">Registro Ledger Inactivo Hoy</td></tr>
+                <tr><td colSpan="5" className="px-6 py-12 text-center text-[var(--text-muted)] text-xs tracking-widest uppercase font-bold">Registro Ledger Inactivo Hoy</td></tr>
               ) : (
                 movimientos.map((mov) => (
                   <tr key={mov.id} className="hover:bg-[var(--bg-surface-2)] transition-colors group">
-                    <td className="px-6 py-4 text-xs font-mono font-bold text-[var(--text-muted)] mb-1">
-                       {new Date(mov.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <td className="px-4 py-4">
+                      <span className="text-xs font-mono font-black text-[var(--text-muted)]">
+                        {new Date(mov.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-xs">
-                       <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase mr-3 ${mov.tipo === 'ingreso' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
+                    <td className="px-4 py-4 text-xs">
+                       <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase mr-2 ${mov.tipo === 'ingreso' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
                            {mov.tipo}
                        </span>
                        <span className="font-bold text-[var(--text-primary)] tracking-tight">{mov.concepto}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-surface-3)] border border-[var(--border-soft)] text-[var(--text-secondary)]">
-                        {mov.metodo_pago}
+                        {mov.metodo_pago || '—'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-4 hidden md:table-cell">
+                      {mov.contrato_id ? (
+                        <span className="text-[9px] font-mono text-[var(--text-muted)] bg-[var(--bg-surface-3)] border border-[var(--border-soft)] px-2 py-1 rounded">
+                          {String(mov.contrato_id).split('-')[0].toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-[var(--text-muted)]">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 text-right">
                        <span className={`text-lg font-black tracking-tighter ${mov.tipo === 'ingreso' ? 'text-green-400' : 'text-rose-400'}`}>
                            {mov.tipo === 'ingreso' ? '+' : '-'}${Number(mov.monto).toFixed(2)}
                        </span>

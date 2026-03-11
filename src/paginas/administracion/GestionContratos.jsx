@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag } from 'lucide-react';
+import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import NuevoContratoView from './Operaciones/NuevoContrato';
+import EditarContrato from './Operaciones/EditarContrato';
 
 // ─── Menú de Navegación Horizontal (igual a Inventario de Trajes) ─────────────
 const ModuleNavbar = ({ currentTab, setTab }) => (
@@ -30,6 +31,7 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
   const { profile, loading: authLoading } = useAuthStore();
   const [contratos, setContratos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [editandoContrato, setEditandoContrato] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isEntregaOpen, setIsEntregaOpen] = useState(false);
   const [isDevolucionOpen, setIsDevolucionOpen] = useState(false);
@@ -145,30 +147,20 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
     if (!monto || monto <= 0) return toast.error('Ingresa un monto válido');
     try {
       // Insertar en pagos_contrato
-      const { data: pago, error: pagoError } = await supabase
+      const { error: pagoError } = await supabase
         .from('pagos_contrato')
         .insert({
           contrato_id: contratoActivo.id,
           tenant_id: profile.tenant_id,
           monto,
           tipo_pago: 'abono',
-          notas: `Abono adicional. Método: ${metodoPagoAbono || 'No especificado'}`,
+          referencia: metodoPagoAbono || null,
+          notas: `Abono adicional — ${metodoPagoAbono || 'Sin método especificado'}`,
           registrado_por: profile.id,
           nombre_registrador_snapshot: profile.nombre_completo || 'Empleado',
-        })
-        .select('id').single();
+        });
       if (pagoError) throw pagoError;
-      // Insertar en ingresos
-      await supabase.from('ingresos').insert({
-        tenant_id: profile.tenant_id,
-        contrato_id: contratoActivo.id,
-        pago_contrato_id: pago.id,
-        monto,
-        descripcion: `Abono contrato — Método: ${metodoPagoAbono || 'No especificado'}`,
-        registrado_por: profile.id,
-        nombre_registrador_snapshot: profile.nombre_completo || 'Empleado',
-        es_manual: true,
-      });
+      // El trigger trg_ingreso_desde_pago registra automáticamente en ingresos.
       // Actualizar saldo
       const nuevoAnticipo = (contratoActivo.anticipo_pagado || 0) + monto;
       const nuevoSaldo = Math.max(0, (contratoActivo.total || 0) - nuevoAnticipo);
@@ -228,6 +220,17 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
     c.clientes?.nombre_completo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Modo edición: reemplaza la vista completa
+  if (editandoContrato) {
+    return (
+      <EditarContrato
+        contrato={editandoContrato}
+        onVolver={() => setEditandoContrato(null)}
+        onGuardado={() => { setEditandoContrato(null); fetchContratos(); }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4">
       {/* Filtros */}
@@ -281,8 +284,8 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                     </div>
                   </td>
                   <td className="px-4 py-5 text-xs text-[var(--text-secondary)] font-bold whitespace-nowrap">
-                    <span className="block">{contract.fecha_salida ? new Date(contract.fecha_salida).toLocaleString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}</span>
-                    <span className="text-[9px] opacity-60 block mt-0.5">Dev: {contract.fecha_devolucion ? new Date(contract.fecha_devolucion).toLocaleString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}</span>
+                    <span className="block">{contract.fecha_salida ? new Date(contract.fecha_salida).toLocaleString('es-EC', { timeZone: 'UTC', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}</span>
+                    <span className="text-[9px] opacity-60 block mt-0.5">Dev: {contract.fecha_devolucion ? new Date(contract.fecha_devolucion).toLocaleString('es-EC', { timeZone: 'UTC', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}</span>
                   </td>
                   <td className="px-4 py-5 max-w-[200px]">
                     <p className="text-xs text-[var(--text-secondary)] font-bold leading-snug line-clamp-2">
@@ -302,6 +305,9 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => abrirVerDetalle(contract)} className="p-2 rounded-lg bg-[var(--color-primary-dim)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white border border-[var(--color-primary)]/20 transition-all" title="Ver detalle">
                         <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => setEditandoContrato(contract)} className="p-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition-all" title="Editar contrato">
+                        <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       {contract.estado === 'reservado' && (
                         <button onClick={() => abrirModalEntrega(contract)} className="btn-guambra-primary !py-2 !px-3 !text-[9px] inline-flex items-center gap-1">
@@ -467,10 +473,10 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                           {val ? (
                             <div className="flex items-baseline gap-2">
                               <span className="text-sm font-black text-[var(--text-primary)]">
-                                {new Date(val).toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })}
+                                {new Date(val).toLocaleDateString('es-EC', { timeZone: 'UTC', day:'2-digit', month:'2-digit', year:'numeric' })}
                               </span>
                               <span className="text-xs text-[var(--text-muted)] font-bold">
-                                {new Date(val).toLocaleTimeString('es-EC', { hour:'2-digit', minute:'2-digit' })}
+                                {new Date(val).toLocaleTimeString('es-EC', { timeZone: 'UTC', hour:'2-digit', minute:'2-digit' })}
                               </span>
                             </div>
                           ) : <span className="text-sm font-bold text-[var(--text-muted)]">—</span>}

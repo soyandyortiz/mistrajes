@@ -99,7 +99,7 @@ export default function CajaGeneral({ initialTab = 'dia' }) {
       if (!yaCerradoHoy) {
           // 2. Ingresos de hoy (usando boundaries locales)
           const { data: ingData, error: errI } = await supabase.from('ingresos')
-             .select('*').eq('tenant_id', profile.tenant_id).gte('registrado_en', startISO).lte('registrado_en', endISO);
+             .select('*, pagos_contrato(referencia)').eq('tenant_id', profile.tenant_id).gte('registrado_en', startISO).lte('registrado_en', endISO);
           if (errI && errI.code !== '42P01') throw errI;
           listIngresos = ingData || [];
 
@@ -147,7 +147,7 @@ export default function CajaGeneral({ initialTab = 'dia' }) {
 
   // Cajas desglose
   const ingresosPorMetodo = METODOS_PAGO.reduce((acc, met) => {
-      acc[met] = ingresosHoy.filter(i => i.metodo_pago === met).reduce((sum, i) => sum + (i.monto || 0), 0);
+      acc[met] = ingresosHoy.filter(i => (i.pagos_contrato?.referencia || i.metodo_pago) === met).reduce((sum, i) => sum + (i.monto || 0), 0);
       return acc;
   }, {});
 
