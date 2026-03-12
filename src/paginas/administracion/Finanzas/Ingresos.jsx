@@ -28,7 +28,7 @@ const getLocalDateString = (date = new Date()) => {
 };
 
 // Métodos de pago base MOCK - En M9 podría venir de config tenant
-const METODOS_PAGO = ['Efectivo', 'Transferencia', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Paypal/Link', 'Otro'];
+const METODOS_PAGO = ['Efectivo', 'Transferencia Bancaria', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Paypal/Link', 'Otro'];
 
 const ModuleNavbar = ({ currentTab, setTab }) => (
   <div className="border-b border-[var(--border-soft)] pb-px mb-8 overflow-x-auto no-scrollbar">
@@ -71,16 +71,31 @@ export default function Ingresos() {
         .order('registrado_en', { ascending: false });
 
       if (error && error.code !== '42P01') throw error;
-      
-      const parsedData = (data || []).map(p => ({
+
+      // Obtener métodos y códigos por separado para evitar fallos de join en PostgREST
+      const lista = data || [];
+      const pagoIds = lista.map(i => i.pago_contrato_id).filter(Boolean);
+      const contratoIds = lista.map(i => i.contrato_id).filter(Boolean);
+      let pagosMap = {};
+      let contratosMap = {};
+
+      if (pagoIds.length > 0) {
+        const { data: pagosRef } = await supabase.from('pagos_contrato').select('id, referencia').in('id', pagoIds);
+        if (pagosRef) pagosMap = pagosRef.reduce((acc, p) => { acc[p.id] = p.referencia; return acc; }, {});
+      }
+      if (contratoIds.length > 0) {
+        const { data: contratosRef } = await supabase.from('contratos').select('id, codigo').in('id', contratoIds);
+        if (contratosRef) contratosMap = contratosRef.reduce((acc, c) => { acc[c.id] = c.codigo; return acc; }, {});
+      }
+
+      const parsedData = lista.map(p => ({
           ...p,
-          // La tabla guarda el nombre directamente como snapshot
           registrado_por_nombre: p.nombre_registrador_snapshot || 'Sistema',
-          // metodo_pago se guarda en la descripcion o viene del metodo_pago_id
-          metodo_pago: p.metodo_pago || 'Efectivo',
+          metodo_pago: pagosMap[p.pago_contrato_id] || (p.es_manual ? 'Manual/Otro' : '—'),
+          codigo_contrato: contratosMap[p.contrato_id] || null,
           tipo: p.es_manual ? 'Manual' : 'Automático'
       }));
-      
+
       setIngresos(parsedData);
     } catch (e) {
       toast.error('Error cargando los registros de ingresos');
@@ -243,10 +258,10 @@ export default function Ingresos() {
                                    <span className="text-[10px] font-black bg-[var(--bg-surface-2)] px-2 py-1 flex w-fit rounded-lg tracking-widest border border-[var(--border-soft)] text-[var(--text-secondary)]">{p.metodo_pago}</span>
                                  </td>
                                 <td className="p-4 text-center">
-                                    {p.contrato_id ? (
-                                       <button onClick={() => toast.info('Redirigiendo a ficha de contrato...')} className="text-[9px] font-black uppercase tracking-widest text-primary hover:text-[var(--text-primary)] transition-colors underline underline-offset-4 decoration-primary/30 hover:decoration-primary/50">{p.contrato_id.substring(0,6)}</button>
+                                    {p.codigo_contrato ? (
+                                       <span className="text-[9px] font-mono font-black text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded">{p.codigo_contrato}</span>
                                     ) : (
-                                       <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]" title="Ingreso Manual automático">MAN-{p.id.substring(0,6)}</span>
+                                       <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]" title="Ingreso Manual">MAN-{p.id.substring(0,6)}</span>
                                     )}
                                 </td>
                                 <td className="p-4 text-right">
@@ -324,17 +339,17 @@ export default function Ingresos() {
                                    <span className="text-[10px] font-black bg-[var(--bg-surface-2)] px-2 py-1 flex w-fit rounded-lg tracking-widest border border-[var(--border-soft)] text-[var(--text-secondary)]">{p.metodo_pago}</span>
                                 </td>
                                 <td className="p-4 text-center">
-                                    {p.contrato_id ? (
+                                    {p.codigo_contrato ? (
                                        <div className="flex flex-col items-center gap-1">
-                                           <FileText className="w-4 h-4 text-[var(--text-muted)]"/>
-                                           <button onClick={() => toast.info('Redirigiendo a ficha...')} className="text-[9px] font-black uppercase tracking-widest text-primary hover:text-[var(--text-primary)] transition-colors underline underline-offset-4 decoration-primary/30 hover:decoration-primary/50">
-                                               {p.contrato_id.substring(0,6)}
-                                           </button>
+                                           <FileText className="w-4 h-4 text-primary opacity-50"/>
+                                           <span className="text-[9px] font-mono font-black text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded">
+                                               {p.codigo_contrato}
+                                           </span>
                                        </div>
                                     ) : (
                                        <div className="flex flex-col items-center gap-1">
                                            <HandCoins className="w-4 h-4 text-[var(--text-muted)]"/>
-                                           <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] font-mono" title="Identificador Automático del Ingreso Manual">
+                                           <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] font-mono" title="Ingreso Manual">
                                                MAN-{p.id.substring(0,6)}
                                            </span>
                                        </div>

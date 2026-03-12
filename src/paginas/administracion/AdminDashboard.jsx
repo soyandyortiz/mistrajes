@@ -48,7 +48,7 @@ const AdminDashboard = () => {
              let queryClientes = supabase.from('clientes').select('id', { count: 'exact' }).is('deleted_at', null);
              let queryProds = supabase.from('productos').select('id', { count: 'exact' }).eq('estado', 'activo').is('deleted_at', null);
              let queryIngresos = supabase.from('ingresos').select('monto').gte('registrado_en', primerDiaMes);
-             let queryEntregas = supabase.from('contratos').select('id, fecha_salida, estado, clientes(nombre_completo)').eq('fecha_salida', hoy).eq('estado', 'reservado');
+             let queryEntregas = supabase.from('contratos').select('id, codigo, fecha_salida, estado, clientes(nombre_completo)').eq('fecha_salida', hoy).eq('estado', 'reservado');
 
              // Aplicar filtro de tenant solo si NO es Super Admin
              if (!isSuperAdmin) {
@@ -181,7 +181,7 @@ const AdminDashboard = () => {
                   <div className="h-2 w-2 rounded-full bg-[var(--color-primary)] mt-1.5 shadow-[0_0_10px_rgba(255,100,50,0.5)]"></div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-black text-[var(--text-primary)] mb-1 truncate">{entrega.clientes?.nombre_completo}</h4>
-                    <p className="text-[9px] text-[var(--color-primary)] font-bold uppercase tracking-widest">Contrato {entrega.id.split('-')[0]}</p>
+                    <p className="text-[9px] text-[var(--color-primary)] font-bold uppercase tracking-widest">{entrega.codigo || entrega.id.split('-')[0].toUpperCase()}</p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-[var(--text-muted)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all" />
                </Link>

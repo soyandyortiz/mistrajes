@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag, Edit2 } from 'lucide-react';
+import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag, Edit2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import NuevoContratoView from './Operaciones/NuevoContrato';
 import EditarContrato from './Operaciones/EditarContrato';
@@ -48,7 +48,7 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
   const [metodoPagoAbono, setMetodoPagoAbono] = useState('');
   const [motivoAnulacion, setMotivoAnulacion] = useState('');
 
-  const METODOS_PAGO = ['Efectivo', 'Transferencia Bancaria', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Otro'];
+  const METODOS_PAGO = ['Efectivo', 'Transferencia Bancaria', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Paypal/Link', 'Otro'];
 
   const fetchContratos = async () => {
     try {
@@ -212,8 +212,7 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
     return <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-[var(--bg-surface-2)] text-[var(--text-muted)] border border-[var(--border-soft)]">Manual</span>;
   };
 
-  // codigo_contrato no existe en BD; se usa el prefijo del UUID como código visual
-  const getCodigoContrato = (c) => `TX-${(c.id || '').substring(0, 8).toUpperCase()}`;
+  const getCodigoContrato = (c) => c.codigo || `TX-${(c.id || '').substring(0, 8).toUpperCase()}`;
 
   const filterData = contratos.filter(c =>
     getCodigoContrato(c).toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -504,19 +503,6 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                         </div>
                       ))}
                     </div>
-                    {detallePagos.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-[var(--border-soft)]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Pagos registrados</p>
-                        <div className="space-y-1.5">
-                          {detallePagos.map(p => (
-                            <div key={p.id} className="flex justify-between items-center text-xs">
-                              <span className="text-[var(--text-secondary)] capitalize">{p.tipo_pago}</span>
-                              <span className="font-black text-green-400">${Number(p.monto).toFixed(2)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     {(contratoActivo.tipo_garantia || contratoActivo.descripcion_garantia) && (
                       <div className="mt-3 pt-3 border-t border-[var(--border-soft)]">
                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 flex items-center gap-1">
@@ -558,6 +544,84 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
                           )}
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Historial de Pagos */}
+                <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)]">
+                  <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                    <DollarSign className="h-3.5 w-3.5"/>Historial de Pagos
+                    <span className="ml-auto text-[var(--text-muted)] font-bold normal-case tracking-normal">
+                      {detallePagos.length} registro{detallePagos.length !== 1 ? 's' : ''}
+                    </span>
+                  </p>
+                  {detallePagos.length === 0 ? (
+                    <p className="text-sm text-[var(--text-muted)] italic">Sin pagos registrados</p>
+                  ) : (
+                    <div className="relative">
+                      <div className="absolute left-[11px] top-2 bottom-2 w-px bg-[var(--border-soft)]"></div>
+                      <div className="space-y-3">
+                        {detallePagos.map((p, idx) => {
+                          const fecha = p.registrado_en ? new Date(p.registrado_en) : null;
+                          const tipoBadge = {
+                            anticipo: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
+                            abono:    'bg-green-500/15 text-green-400 border-green-500/25',
+                            saldo:    'bg-[var(--color-primary-dim)] text-[var(--color-primary)] border-[var(--color-primary)]/25',
+                          }[p.tipo_pago] || 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-soft)]';
+                          const dotColor = {
+                            anticipo: 'bg-blue-400',
+                            abono:    'bg-green-400',
+                            saldo:    'bg-[var(--color-primary)]',
+                          }[p.tipo_pago] || 'bg-[var(--text-muted)]';
+
+                          return (
+                            <div key={p.id} className="flex gap-4 pl-1">
+                              <div className={`w-5 h-5 rounded-full ${dotColor} shrink-0 mt-0.5 flex items-center justify-center z-10`}>
+                                <span className="text-[7px] font-black text-white">{idx + 1}</span>
+                              </div>
+                              <div className="flex-1 bg-[var(--bg-surface)] rounded-xl p-3 border border-[var(--border-soft)]">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${tipoBadge}`}>
+                                    {p.tipo_pago}
+                                  </span>
+                                  <span className="text-base font-black text-green-400 font-mono">
+                                    ${Number(p.monto).toFixed(2)}
+                                  </span>
+                                </div>
+                                {fecha && (
+                                  <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Clock className="w-3 h-3 text-[var(--text-muted)] shrink-0"/>
+                                    <span className="text-xs font-bold text-[var(--text-primary)]">
+                                      {fecha.toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })}
+                                    </span>
+                                    <span className="text-xs text-[var(--text-muted)]">
+                                      {fecha.toLocaleTimeString('es-EC', { hour:'2-digit', minute:'2-digit' })}
+                                    </span>
+                                  </div>
+                                )}
+                                {p.referencia && (
+                                  <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+                                    <CreditCard className="w-3 h-3 shrink-0"/>
+                                    {p.referencia}
+                                  </p>
+                                )}
+                                {p.nombre_registrador_snapshot && (
+                                  <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 mt-0.5">
+                                    <User className="w-3 h-3 shrink-0"/>
+                                    {p.nombre_registrador_snapshot}
+                                  </p>
+                                )}
+                                {p.notas && (
+                                  <p className="text-[10px] text-[var(--text-muted)] italic mt-1.5 pt-1.5 border-t border-[var(--border-soft)] line-clamp-2">
+                                    {p.notas}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -639,7 +703,7 @@ const ContratosProblemasView = () => {
               <tbody className="divide-y divide-[var(--border-soft)]">
                 {contratos.map(c => (
                   <tr key={c.id} className="hover:bg-[var(--bg-surface-2)] transition-all">
-                    <td className="py-5 pl-8 font-mono font-black text-red-400 text-sm">{`TX-${(c.id || '').substring(0, 8).toUpperCase()}`}</td>
+                    <td className="py-5 pl-8 font-mono font-black text-red-400 text-sm">{c.codigo || `TX-${(c.id || '').substring(0, 8).toUpperCase()}`}</td>
                     <td className="px-4 py-5 text-sm font-bold text-[var(--text-primary)]">{c.clientes?.nombre_completo}</td>
                     <td className="px-4 py-5 text-xs text-[var(--text-secondary)]">{c.notas_internas || '—'}</td>
                   </tr>
@@ -700,7 +764,7 @@ const HistorialView = () => {
               <tbody className="divide-y divide-[var(--border-soft)]">
                 {contratos.map(c => (
                   <tr key={c.id} className="hover:bg-[var(--bg-surface-2)] transition-all">
-                    <td className="py-5 pl-8 font-mono font-black text-primary text-sm">{`TX-${(c.id || '').substring(0, 8).toUpperCase()}`}</td>
+                    <td className="py-5 pl-8 font-mono font-black text-primary text-sm">{c.codigo || `TX-${(c.id || '').substring(0, 8).toUpperCase()}`}</td>
                     <td className="px-4 py-5 text-sm font-bold text-[var(--text-primary)]">{c.clientes?.nombre_completo}</td>
                     <td className="px-4 py-5 text-sm font-black text-[var(--text-primary)]">${Number(c.total || 0).toFixed(2)}</td>
                     <td className="px-4 py-5">

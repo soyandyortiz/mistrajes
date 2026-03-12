@@ -38,7 +38,7 @@ const NotificationsDropdown = () => {
       if (profile.tenant_id) {
         const { data: pData } = await supabase
           .from('contratos')
-          .select('id, created_at')
+          .select('id, codigo, created_at')
           .eq('tenant_id', profile.tenant_id)
           .eq('canal', 'online')
           .eq('estado', 'pendiente_pago')
@@ -47,7 +47,7 @@ const NotificationsDropdown = () => {
 
         const { data: cData } = await supabase
           .from('contratos')
-          .select('id, created_at')
+          .select('id, codigo, created_at')
           .eq('tenant_id', profile.tenant_id)
           .eq('estado', 'devuelto_con_problemas')
           .order('created_at', { ascending: false });
@@ -79,7 +79,7 @@ const NotificationsDropdown = () => {
             uid: `pedido_${pedido.id}`,
             type: 'pedido',
             title: `Nuevo Pedido Online`,
-            description: `Se ha recibido un nuevo pedido #CNT-${pedido.id.substring(0, 4)}`,
+            description: `Se ha recibido un nuevo pedido ${pedido.codigo || pedido.id.substring(0, 8).toUpperCase()}`,
             createdAt: new Date(pedido.created_at),
             icon: ShoppingCart,
             color: 'text-green-500 bg-green-500/10 border-green-500/30'
@@ -93,7 +93,7 @@ const NotificationsDropdown = () => {
             uid: `contrato_${contrato.id}`,
             type: 'contrato',
             title: `Contrato con Problemas`,
-            description: `El contrato #CNT-${contrato.id.substring(0, 4)} fue devuelto con incidencias.`,
+            description: `El contrato ${contrato.codigo || contrato.id.substring(0, 8).toUpperCase()} fue devuelto con incidencias.`,
             createdAt: new Date(contrato.created_at),
             icon: AlertTriangle,
             color: 'text-red-500 bg-red-500/10 border-red-500/30'

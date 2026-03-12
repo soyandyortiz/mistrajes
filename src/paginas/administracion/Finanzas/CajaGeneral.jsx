@@ -16,7 +16,7 @@ const getLocalDayBoundaries = () => {
   return { startISO: start.toISOString(), endISO: end.toISOString(), localDate: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}` };
 };
 
-const METODOS_PAGO = ['Efectivo', 'Transferencia', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Paypal/Link', 'Otro'];
+const METODOS_PAGO = ['Efectivo', 'Transferencia Bancaria', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Paypal/Link', 'Otro'];
 const CATEGORIAS_EGRESO = [
     { label: 'Pago a proveedores', value: 'pago_proveedor' },
     { label: 'Pago a empleados', value: 'pago_empleado' },
@@ -91,36 +91,63 @@ export default function CajaGeneral({ initialTab = 'dia' }) {
           setSaldoAnterior(cierresLista[0].saldo_acumulado || 0);
       }
 
-      // Si ya cerró, no cargamos operaciones del día al vivo (se bloquea).
-      // Solo cargamos si NO está cerrado DENTRO DEL FRONTEND.
       let listIngresos = [];
       let listEgresos = [];
-      
-      if (!yaCerradoHoy) {
-          // 2. Ingresos de hoy (usando boundaries locales)
-          const { data: ingData, error: errI } = await supabase.from('ingresos')
-             .select('*, pagos_contrato(referencia)').eq('tenant_id', profile.tenant_id).gte('registrado_en', startISO).lte('registrado_en', endISO);
-          if (errI && errI.code !== '42P01') throw errI;
-          listIngresos = ingData || [];
 
-          // 3. Egresos (De modalidades de caja/contado) hoy
-          const { data: egData, error: errE } = await supabase.from('egresos')
-             .select('*').eq('tenant_id', profile.tenant_id).eq('modalidad', 'contado').gte('fecha_egreso', hoyISO).lte('fecha_egreso', hoyISO);
+      if (!yaCerradoHoy) {
+          // 2. Ingresos de hoy — query simple sin joins
+          const { data: ingData, error: errI } = await supabase
+              .from('ingresos')
+              .select('*')
+              .eq('tenant_id', profile.tenant_id)
+              .gte('registrado_en', startISO)
+              .lte('registrado_en', endISO);
+          if (errI && errI.code !== '42P01') throw errI;
+
+          // 3. Obtener métodos de pago desde pagos_contrato por separado
+          const pagoIds = (ingData || []).map(i => i.pago_contrato_id).filter(Boolean);
+          let pagosMap = {};
+          if (pagoIds.length > 0) {
+              const { data: pagosRef } = await supabase
+                  .from('pagos_contrato')
+                  .select('id, referencia')
+                  .in('id', pagoIds);
+              if (pagosRef) {
+                  pagosMap = pagosRef.reduce((acc, p) => { acc[p.id] = p.referencia; return acc; }, {});
+              }
+          }
+
+          listIngresos = (ingData || []).map(ing => ({
+              ...ing,
+              metodo_pago: pagosMap[ing.pago_contrato_id] || (ing.es_manual ? 'Otro' : null)
+          }));
+
+          // 4. Egresos de contado del día
+          const { data: egData, error: errE } = await supabase
+              .from('egresos')
+              .select('*')
+              .eq('tenant_id', profile.tenant_id)
+              .eq('modalidad', 'contado')
+              .gte('fecha_egreso', hoyISO)
+              .lte('fecha_egreso', hoyISO);
           if (errE && errE.code !== '42P01') throw errE;
           listEgresos = egData || [];
 
-          // 4. Abonos o Cuotas (pagos_egreso) hoy
-          const { data: abonosData, error: errA } = await supabase.from('pagos_egreso')
-             .select('*, egresos(categoria)').eq('tenant_id', profile.tenant_id).gte('fecha_pago', hoyISO).lte('fecha_pago', hoyISO);
+          // 5. Cuotas/abonos de egresos a crédito pagados hoy
+          const { data: abonosData, error: errA } = await supabase
+              .from('pagos_egreso')
+              .select('*, egresos(categoria)')
+              .eq('tenant_id', profile.tenant_id)
+              .gte('fecha_pago', hoyISO)
+              .lte('fecha_pago', hoyISO);
           if (errA && errA.code !== '42P01') throw errA;
-          
+
           if (abonosData) {
-              const mappedAbonos = abonosData.map(ab => ({
+              listEgresos = [...listEgresos, ...abonosData.map(ab => ({
                   ...ab,
                   monto_total: ab.monto,
                   categoria: ab.egresos?.categoria || 'otros'
-              }));
-              listEgresos = [...listEgresos, ...mappedAbonos];
+              }))];
           }
       }
 
@@ -147,9 +174,11 @@ export default function CajaGeneral({ initialTab = 'dia' }) {
 
   // Cajas desglose
   const ingresosPorMetodo = METODOS_PAGO.reduce((acc, met) => {
-      acc[met] = ingresosHoy.filter(i => (i.pagos_contrato?.referencia || i.metodo_pago) === met).reduce((sum, i) => sum + (i.monto || 0), 0);
+      acc[met] = ingresosHoy.filter(i => i.metodo_pago === met).reduce((sum, i) => sum + (i.monto || 0), 0);
       return acc;
   }, {});
+  // Ingresos sin método clasificado (manuales u otros)
+  const ingresosSinMetodo = ingresosHoy.filter(i => !i.metodo_pago || !METODOS_PAGO.includes(i.metodo_pago)).reduce((sum, i) => sum + (i.monto || 0), 0);
 
   const egresosPorCat = CATEGORIAS_EGRESO.reduce((acc, catItem) => {
       acc[catItem.value] = egresosHoy.filter(i => i.categoria === catItem.value).reduce((sum, i) => sum + (i.monto_total || 0), 0);
@@ -296,7 +325,13 @@ Esto archiva el balance y bloquea adición o edición retroactiva para todos los
                                           </div>
                                       )
                                   ))}
-                                  {totalIn === 0 && <div className="p-10 text-center text-xs text-[var(--text-muted)] uppercase tracking-widest font-black">Caja inamovible hoy. Cero ingresos.</div>}
+                                  {ingresosSinMetodo > 0 && (
+                                      <div className="flex justify-between items-center p-4 text-sm hover:bg-[var(--bg-surface-2)] transition-colors">
+                                          <span className="font-bold text-[var(--text-muted)]">Sin método / Manual</span>
+                                          <span className="font-black font-mono text-green-400 tracking-wider">${ingresosSinMetodo.toFixed(2)}</span>
+                                      </div>
+                                  )}
+                                  {totalIn === 0 && <div className="p-10 text-center text-xs text-[var(--text-muted)] uppercase tracking-widest font-black">Sin ingresos registrados hoy.</div>}
                               </div>
                           </div>
 

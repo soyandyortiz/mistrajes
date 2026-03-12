@@ -47,10 +47,10 @@ const Caja = () => {
       const { startISO, endISO } = getLocalDayBoundaries();
       let listaUnificada = [];
 
-      // 1. Fetch ingresos de hoy (column 'registrado_en' is the timestamp)
+      // 1. Fetch ingresos de hoy — query simple
       const { data: ingresosData, error: errIng } = await supabase
         .from('ingresos')
-        .select('*, pagos_contrato(referencia, tipo_pago)')
+        .select('*')
         .eq('tenant_id', profile.tenant_id)
         .gte('registrado_en', startISO)
         .lte('registrado_en', endISO)
@@ -58,15 +58,29 @@ const Caja = () => {
 
       if (errIng && errIng.code !== '42P01') throw errIng;
 
-      // Map ingresos to unified format
-      if (ingresosData) {
+      // 1b. Obtener métodos de pago y códigos de contrato por separado
+      if (ingresosData && ingresosData.length > 0) {
+        const pagoIds = ingresosData.map(i => i.pago_contrato_id).filter(Boolean);
+        const contratoIds = ingresosData.map(i => i.contrato_id).filter(Boolean);
+        let pagosMap = {};
+        let contratosMap = {};
+
+        if (pagoIds.length > 0) {
+          const { data: pagosRef } = await supabase.from('pagos_contrato').select('id, referencia').in('id', pagoIds);
+          if (pagosRef) pagosMap = pagosRef.reduce((acc, p) => { acc[p.id] = p.referencia; return acc; }, {});
+        }
+        if (contratoIds.length > 0) {
+          const { data: contratosRef } = await supabase.from('contratos').select('id, codigo').in('id', contratoIds);
+          if (contratosRef) contratosMap = contratosRef.reduce((acc, c) => { acc[c.id] = c.codigo; return acc; }, {});
+        }
+
         listaUnificada.push(...ingresosData.map(ing => ({
           id: ing.id,
           tipo: 'ingreso',
           concepto: ing.descripcion || 'Ingreso registrado',
           monto: Number(ing.monto || 0),
-          metodo_pago: ing.pagos_contrato?.referencia || (ing.es_manual ? 'Manual/Otro' : '—'),
-          contrato_id: ing.contrato_id,
+          metodo_pago: pagosMap[ing.pago_contrato_id] || (ing.es_manual ? 'Manual/Otro' : '—'),
+          contrato_id: contratosMap[ing.contrato_id] || ing.contrato_id,
           created_at: ing.registrado_en || ing.created_at,
           fuente: 'ingresos'
         })));
@@ -320,7 +334,7 @@ const Caja = () => {
                     <td className="px-4 py-4 hidden md:table-cell">
                       {mov.contrato_id ? (
                         <span className="text-[9px] font-mono text-[var(--text-muted)] bg-[var(--bg-surface-3)] border border-[var(--border-soft)] px-2 py-1 rounded">
-                          {String(mov.contrato_id).split('-')[0].toUpperCase()}
+                          {mov.contrato_id}
                         </span>
                       ) : (
                         <span className="text-[9px] text-[var(--text-muted)]">—</span>

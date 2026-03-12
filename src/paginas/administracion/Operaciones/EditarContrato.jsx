@@ -288,7 +288,7 @@ export default function EditarContrato({ contrato, onVolver, onGuardado }) {
     }
   };
 
-  const codigoContrato = `TX-${(contrato.id || '').substring(0, 8).toUpperCase()}`;
+  const codigoContrato = contrato.codigo || `TX-${(contrato.id || '').substring(0, 8).toUpperCase()}`;
 
   // ── RENDER ──────────────────────────────────────────────────────────────────
   return (

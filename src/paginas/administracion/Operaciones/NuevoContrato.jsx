@@ -413,6 +413,7 @@ export default function NuevoContrato({ onVolver }) {
   // -- PASO 6: GUARDADO REAL EN SUPABASE --
   const [guardando, setGuardando] = useState(false);
   const [contratoId, setContratoId] = useState(null);
+  const [contratoCodigo, setContratoCodigo] = useState(null);
 
   const handleGuardarContrato = async () => {
     if (guardando) return;
@@ -542,6 +543,9 @@ export default function NuevoContrato({ onVolver }) {
 
       setContratoId(data.contrato_id);
       setContratoGuardado(true);
+      // Obtener el código legible generado por el trigger
+      const { data: cData } = await supabase.from('contratos').select('codigo').eq('id', data.contrato_id).single();
+      setContratoCodigo(cData?.codigo || null);
       toast.success(`¡Contrato creado! Estado: Reservado. Anticipo $${montoAnticipoParsed.toFixed(2)} registrado.`);
     } catch (e) {
       console.error('Error guardando contrato:', e);
@@ -1402,7 +1406,7 @@ export default function NuevoContrato({ onVolver }) {
                                 <div className="p-6 bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-2xl flex flex-col gap-4">
                                    <div className="flex flex-col sm:flex-row gap-4">
                                       <button
-                                        onClick={() => contratoId && toast.info(`Contrato ID: ${contratoId.substring(0, 8).toUpperCase()} — Impresión disponible próximamente.`)}
+                                        onClick={() => contratoId && toast.info(`Contrato ${contratoCodigo || contratoId.substring(0, 8).toUpperCase()} — Impresión disponible próximamente.`)}
                                         className="btn-guambra-primary !py-4 h-16 flex-1 text-sm flex items-center justify-center gap-2 group bg-blue-600 hover:bg-blue-500 border-none shadow-blue-500/20 shadow-xl">
                                          <Printer className="w-5 h-5"/> Imprimir Contrato (PDF)
                                       </button>

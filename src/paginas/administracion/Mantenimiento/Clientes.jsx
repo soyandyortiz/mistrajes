@@ -271,15 +271,15 @@ export default function Clientes() {
     try {
       const { data: mc, error } = await supabase
         .from('contratos')
-        .select('id, created_at, total, estado')
+        .select('id, codigo, created_at, total, estado')
         .eq('cliente_id', p.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       const mapped = (mc || []).map((tx) => ({
         id: tx.id,
-        codigo: `CTX-${tx.id.split('-')[0].toUpperCase()}`,
+        codigo: tx.codigo || `CTX-${tx.id.split('-')[0].toUpperCase()}`,
         fecha: new Date(tx.created_at).toLocaleDateString(),
         total: tx.total || 0,
         estado: tx.estado
