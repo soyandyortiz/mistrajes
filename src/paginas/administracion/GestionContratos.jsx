@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
-import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag, Edit2, Clock, Trash2, AlertCircle, Building2, MapPin } from 'lucide-react';
+import { useTenantStore } from '../../stores/tenantStore';
+import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag, Edit2, Clock, Trash2, AlertCircle, Building2, MapPin, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import NuevoContratoView from './Operaciones/NuevoContrato';
 import EditarContrato from './Operaciones/EditarContrato';
+import { imprimirContrato } from '../../utils/imprimirContrato';
 
 // ─── Menú de Navegación Horizontal (igual a Inventario de Trajes) ─────────────
 const ModuleNavbar = ({ currentTab, setTab }) => (
@@ -251,6 +253,7 @@ const ContratoDetalleModal = ({ contrato, onClose, detalleItems, detallePagos, l
 // ─── Sección: Contratos Activos ───────────────────────────────────────────────
 const ContratosActivosView = ({ onNuevoContrato }) => {
   const { profile, loading: authLoading } = useAuthStore();
+  const { tenant } = useTenantStore();
   const [contratos, setContratos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editandoContrato, setEditandoContrato] = useState(null);
@@ -1132,6 +1135,31 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
 
               </div>
             )}
+
+            {/* Pie del modal — botón imprimir */}
+            {!detalleLoading && (
+              <div className="px-6 py-4 border-t border-[var(--border-soft)] flex items-center justify-between gap-4">
+                <button
+                  onClick={() => imprimirContrato({
+                    contrato: contratoActivo,
+                    items: detalleItems,
+                    pagos: detallePagos,
+                    tenant,
+                  })}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--color-primary)]/30 text-[var(--color-primary)] bg-[var(--color-primary-dim)] hover:bg-[var(--color-primary)]/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Imprimir Contrato
+                </button>
+                <button
+                  onClick={() => setIsVerOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] font-black text-[10px] uppercase tracking-widest transition-all hover:bg-[var(--bg-surface-3)]"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
+
           </div>
         </div>
       )}
@@ -1504,8 +1532,16 @@ const ContratosProblemasView = () => {
 // ─── Sección: Historial ────────────────────────────────────────────────────────
 const HistorialView = () => {
   const { profile, loading: authLoading } = useAuthStore();
+  const { tenant } = useTenantStore();
   const [contratos, setContratos] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal ver detalle de contrato
+  const [isVerOpen, setIsVerOpen] = useState(false);
+  const [contratoActivo, setContratoActivo] = useState(null);
+  const [detalleItems, setDetalleItems] = useState([]);
+  const [detallePagos, setDetallePagos] = useState([]);
+  const [detalleLoading, setDetalleLoading] = useState(false);
 
   // Modal de problemas del historial
   const [isVerProblemasOpen, setIsVerProblemasOpen] = useState(false);
@@ -1518,7 +1554,14 @@ const HistorialView = () => {
       try {
         const { data, error } = await supabase
           .from('contratos')
-          .select('*, clientes(nombre_completo)')
+          .select(`*, clientes(
+            nombre_completo, identificacion, tipo_entidad,
+            email, whatsapp, direccion_domicilio, ciudad, provincia,
+            nombre_referencia, telefono_referencia,
+            nombre_referencia_2, telefono_referencia_2,
+            nombre_empresa, ruc_empresa,
+            nombre_responsable_empresa, telefono_responsable_empresa, email_responsable_empresa
+          )`)
           .eq('tenant_id', profile.tenant_id)
           .in('estado', ['devuelto_ok', 'problemas_resueltos', 'cancelado'])
           .order('created_at', { ascending: false });
@@ -1530,6 +1573,29 @@ const HistorialView = () => {
     if (!authLoading && profile?.tenant_id) fetch();
     else if (!authLoading && !profile?.tenant_id) setLoading(false);
   }, [authLoading, profile?.tenant_id]);
+
+  const abrirVerDetalle = async (c) => {
+    setContratoActivo(c);
+    setIsVerOpen(true);
+    setDetalleLoading(true);
+    try {
+      const [{ data: items }, { data: pagos }] = await Promise.all([
+        supabase
+          .from('items_contrato')
+          .select('*, tallas:items_contrato_tallas(etiqueta_talla, cantidad, nombre_pieza_snapshot)')
+          .eq('contrato_id', c.id)
+          .order('created_at'),
+        supabase
+          .from('pagos_contrato')
+          .select('*')
+          .eq('contrato_id', c.id)
+          .order('registrado_en'),
+      ]);
+      setDetalleItems(items || []);
+      setDetallePagos(pagos || []);
+    } catch { toast.error('Error cargando detalle del contrato'); }
+    finally { setDetalleLoading(false); }
+  };
 
   const abrirProblemas = async (c) => {
     setContratoHistorial(c);
@@ -1573,6 +1639,7 @@ const HistorialView = () => {
                   <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Total</th>
                   <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Estado Final</th>
                   <th className="px-4 py-5 text-left text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Problemas</th>
+                  <th className="px-4 py-5 text-right text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-40">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-soft)]">
@@ -1601,11 +1668,228 @@ const HistorialView = () => {
                           <span className="text-[10px] text-[var(--text-muted)]">—</span>
                         )}
                       </td>
+                      <td className="px-4 py-5 text-right">
+                        <button
+                          onClick={() => abrirVerDetalle(c)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/25 text-[var(--color-primary)] bg-[var(--color-primary-dim)] hover:bg-[var(--color-primary)]/20 text-[10px] font-black uppercase tracking-widest transition-all ml-auto"
+                        >
+                          <Eye className="w-3.5 h-3.5"/> Ver contrato
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal VER DETALLE (Historial) ─────────────────────────────────── */}
+      {isVerOpen && contratoActivo && (
+        <div className="fixed inset-0 z-[200] flex items-start justify-center lg:pl-72 pt-20 px-6 pb-6 overflow-y-auto bg-[var(--bg-page)]/85 backdrop-blur-md">
+          <div className="glass-card w-full max-w-4xl animate-in zoom-in-95 shadow-2xl">
+
+            {/* Cabecera */}
+            <div className="flex items-center justify-between px-7 py-4 border-b border-[var(--border-soft)]">
+              <div className="flex items-center gap-4">
+                <p className="font-mono font-black text-[var(--color-primary)] text-base tracking-tight">{getCodigoContrato(contratoActivo)}</p>
+                {getStatusBadge(contratoActivo.estado)}
+                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold hidden sm:block">Detalle del Contrato</span>
+              </div>
+              <button onClick={() => setIsVerOpen(false)} className="p-2 rounded-xl hover:bg-[var(--bg-surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Cuerpo */}
+            {detalleLoading ? (
+              <div className="flex justify-center py-14"><Loader2 className="h-7 w-7 animate-spin text-[var(--color-primary)]" /></div>
+            ) : (
+              <div className="p-6 space-y-4">
+
+                {/* Fila 1: Cliente | Fechas | Financiero */}
+                <div className="grid grid-cols-3 gap-4">
+
+                  {/* Cliente */}
+                  {(() => {
+                    const cli = contratoActivo.clientes || {};
+                    const esEmpresa = cli.tipo_entidad === 'empresa';
+                    return (
+                      <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)] space-y-3">
+                        <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5"/>Cliente
+                          {esEmpresa && <span className="ml-1 text-[9px] bg-blue-500/15 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-md font-black uppercase tracking-wider">Empresa</span>}
+                        </p>
+                        <div>
+                          <p className="font-black text-[var(--text-primary)] text-sm leading-snug">{cli.nombre_completo || '—'}</p>
+                          <p className="text-xs text-[var(--text-muted)] font-mono">{cli.identificacion || '—'}</p>
+                        </div>
+                        {cli.email    && <p className="text-xs text-[var(--text-secondary)] truncate">{cli.email}</p>}
+                        {cli.whatsapp && <p className="text-xs text-[var(--text-secondary)]">{cli.whatsapp}</p>}
+                        {esEmpresa && cli.nombre_empresa && (
+                          <div className="pt-2 border-t border-[var(--border-soft)]">
+                            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 flex items-center gap-1"><Building2 className="h-3 w-3"/>Empresa</p>
+                            <p className="text-xs font-bold text-[var(--text-primary)]">{cli.nombre_empresa}</p>
+                            {cli.nombre_responsable_empresa && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{cli.nombre_responsable_empresa}</p>}
+                          </div>
+                        )}
+                        {(cli.ciudad || cli.provincia) && (
+                          <p className="text-xs text-[var(--text-muted)] flex items-center gap-1"><MapPin className="h-3 w-3 shrink-0"/>{[cli.ciudad, cli.provincia].filter(Boolean).join(', ')}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Fechas */}
+                  <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)] space-y-3">
+                    <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5"/>Fechas</p>
+                    {[
+                      ['Salida',      contratoActivo.fecha_salida],
+                      ['Evento',      contratoActivo.fecha_evento],
+                      ['Devolución',  contratoActivo.fecha_devolucion],
+                    ].map(([lbl, val]) => val && (
+                      <div key={lbl}>
+                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">{lbl}</p>
+                        <p className="text-xs font-black text-[var(--text-primary)]">{new Date(val).toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })}</p>
+                      </div>
+                    ))}
+                    {contratoActivo.tipo_envio && (
+                      <div className="pt-2 border-t border-[var(--border-soft)]">
+                        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Entrega</p>
+                        <p className="text-xs font-bold text-[var(--text-primary)] capitalize">{contratoActivo.tipo_envio === 'envio' ? 'Envío a domicilio' : 'Retiro en tienda'}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Financiero */}
+                  <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)] space-y-2">
+                    <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5"/>Financiero</p>
+                    <div className="space-y-1.5">
+                      {[
+                        ['Subtotal',   `$${Number(contratoActivo.subtotal || 0).toFixed(2)}`,         false, false],
+                        ['Descuento',  `-$${Number(contratoActivo.monto_descuento || 0).toFixed(2)}`,  false, false],
+                        ['Total',      `$${Number(contratoActivo.total || 0).toFixed(2)}`,             true,  false],
+                        ['Anticipo',   `$${Number(contratoActivo.anticipo_pagado || 0).toFixed(2)}`,   false, false],
+                        ['Saldo',      `$${Number(contratoActivo.saldo_pendiente || 0).toFixed(2)}`,   false, Number(contratoActivo.saldo_pendiente) > 0],
+                      ].map(([lbl, val, bold, warn]) => (
+                        <div key={lbl} className={`flex justify-between items-center text-xs ${bold ? 'border-t border-[var(--border-soft)] pt-2 mt-1' : ''}`}>
+                          <span className="text-[var(--text-secondary)]">{lbl}</span>
+                          <span className={`font-black ${bold ? 'text-[var(--text-primary)] text-sm' : warn ? 'text-red-400' : 'text-[var(--text-primary)]'}`}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {(contratoActivo.tipo_garantia || contratoActivo.descripcion_garantia) && (
+                      <div className="mt-3 pt-3 border-t border-[var(--border-soft)]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5 flex items-center gap-1"><ShieldCheck className="h-3 w-3"/>Garantía</p>
+                        <p className="text-xs font-black text-[var(--text-primary)] capitalize">{contratoActivo.tipo_garantia || '—'}</p>
+                        {contratoActivo.descripcion_garantia && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{contratoActivo.descripcion_garantia}</p>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Productos y Tallas */}
+                <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)]">
+                  <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5"><Package className="h-3.5 w-3.5"/>Productos y Tallas</p>
+                  {detalleItems.length === 0 ? (
+                    <p className="text-sm text-[var(--text-muted)] italic">Sin items registrados</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {detalleItems.map(item => (
+                        <div key={item.id} className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border-soft)]">
+                          <div className="flex justify-between items-start gap-3">
+                            <p className="font-black text-[var(--text-primary)] text-sm leading-tight">{item.nombre_item}</p>
+                            <p className="text-xs font-black text-[var(--color-primary)] shrink-0">${Number(item.precio_unitario).toFixed(2)}</p>
+                          </div>
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1">Cantidad: {item.cantidad}</p>
+                          {item.tallas?.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {item.tallas.map((t, i) => (
+                                <span key={i} className="inline-flex items-center gap-1 bg-[var(--color-primary-dim)] text-[var(--color-primary)] border border-[var(--color-primary)]/20 px-2 py-0.5 rounded-lg text-[10px] font-black">
+                                  {t.nombre_pieza_snapshot}: <span className="uppercase">{t.etiqueta_talla}</span> ×{t.cantidad}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Historial de Pagos */}
+                <div className="bg-[var(--bg-surface-2)] rounded-2xl p-5 border border-[var(--border-soft)]">
+                  <p className="text-[10px] text-[var(--color-primary)] font-black uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                    <DollarSign className="h-3.5 w-3.5"/>Historial de Pagos
+                    <span className="ml-auto text-[var(--text-muted)] font-bold normal-case tracking-normal">{detallePagos.length} registro{detallePagos.length !== 1 ? 's' : ''}</span>
+                  </p>
+                  {detallePagos.length === 0 ? (
+                    <p className="text-sm text-[var(--text-muted)] italic">Sin pagos registrados</p>
+                  ) : (
+                    <div className="relative">
+                      <div className="absolute left-[11px] top-2 bottom-2 w-px bg-[var(--border-soft)]"></div>
+                      <div className="space-y-3">
+                        {detallePagos.map((p, idx) => {
+                          const fecha = p.registrado_en ? new Date(p.registrado_en) : null;
+                          const tipoBadge = { anticipo: 'bg-blue-500/15 text-blue-400 border-blue-500/25', abono: 'bg-green-500/15 text-green-400 border-green-500/25', saldo: 'bg-[var(--color-primary-dim)] text-[var(--color-primary)] border-[var(--color-primary)]/25' }[p.tipo_pago] || 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-soft)]';
+                          const dotColor = { anticipo: 'bg-blue-400', abono: 'bg-green-400', saldo: 'bg-[var(--color-primary)]' }[p.tipo_pago] || 'bg-[var(--text-muted)]';
+                          return (
+                            <div key={p.id} className="flex gap-4 pl-1">
+                              <div className={`w-5 h-5 rounded-full ${dotColor} shrink-0 mt-0.5 flex items-center justify-center z-10`}>
+                                <span className="text-[7px] font-black text-white">{idx + 1}</span>
+                              </div>
+                              <div className="flex-1 bg-[var(--bg-surface)] rounded-xl p-3 border border-[var(--border-soft)]">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${tipoBadge}`}>{p.tipo_pago}</span>
+                                  <span className="text-base font-black text-green-400 font-mono">${Number(p.monto).toFixed(2)}</span>
+                                </div>
+                                {fecha && (
+                                  <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Clock className="w-3 h-3 text-[var(--text-muted)] shrink-0"/>
+                                    <span className="text-xs font-bold text-[var(--text-primary)]">{fecha.toLocaleDateString('es-EC', { day:'2-digit', month:'2-digit', year:'numeric' })}</span>
+                                    <span className="text-xs text-[var(--text-muted)]">{fecha.toLocaleTimeString('es-EC', { hour:'2-digit', minute:'2-digit' })}</span>
+                                  </div>
+                                )}
+                                {p.referencia && <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1"><CreditCard className="w-3 h-3 shrink-0"/>{p.referencia}</p>}
+                                {p.nombre_registrador_snapshot && <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 mt-0.5"><User className="w-3 h-3 shrink-0"/>{p.nombre_registrador_snapshot}</p>}
+                                {p.notas && <p className="text-[10px] text-[var(--text-muted)] italic mt-1.5 pt-1.5 border-t border-[var(--border-soft)] line-clamp-2">{p.notas}</p>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+
+            {/* Pie: botones de acción */}
+            {!detalleLoading && (
+              <div className="px-6 py-4 border-t border-[var(--border-soft)] flex items-center justify-between gap-4">
+                <button
+                  onClick={() => imprimirContrato({
+                    contrato: contratoActivo,
+                    items: detalleItems,
+                    pagos: detallePagos,
+                    tenant,
+                  })}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--color-primary)]/30 text-[var(--color-primary)] bg-[var(--color-primary-dim)] hover:bg-[var(--color-primary)]/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Imprimir Contrato
+                </button>
+                <button
+                  onClick={() => setIsVerOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] font-black text-[10px] uppercase tracking-widest transition-all hover:bg-[var(--bg-surface-3)]"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
+
           </div>
         </div>
       )}
