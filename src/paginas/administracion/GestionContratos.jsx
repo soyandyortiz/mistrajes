@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { useTenantStore } from '../../stores/tenantStore';
-import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag, Edit2, Clock, Trash2, AlertCircle, Building2, MapPin, Printer } from 'lucide-react';
+import { ClipboardList, Plus, ArrowRight, CheckCircle2, AlertTriangle, Play, Loader2, DollarSign, X, Ban, Search, Eye, User, Calendar, Package, CreditCard, ShieldCheck, ShoppingBag, Edit2, Clock, Trash2, AlertCircle, Building2, MapPin, Printer, FileText, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import NuevoContratoView from './Operaciones/NuevoContrato';
 import EditarContrato from './Operaciones/EditarContrato';
 import { imprimirContrato } from '../../utils/imprimirContrato';
+import { imprimirComprobante } from '../../utils/imprimirComprobante';
 
 // ─── Menú de Navegación Horizontal (igual a Inventario de Trajes) ─────────────
 const ModuleNavbar = ({ currentTab, setTab }) => (
@@ -1136,21 +1137,41 @@ const ContratosActivosView = ({ onNuevoContrato }) => {
               </div>
             )}
 
-            {/* Pie del modal — botón imprimir */}
+            {/* Pie del modal — botones de acción */}
             {!detalleLoading && (
-              <div className="px-6 py-4 border-t border-[var(--border-soft)] flex items-center justify-between gap-4">
-                <button
-                  onClick={() => imprimirContrato({
-                    contrato: contratoActivo,
-                    items: detalleItems,
-                    pagos: detallePagos,
-                    tenant,
-                  })}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--color-primary)]/30 text-[var(--color-primary)] bg-[var(--color-primary-dim)] hover:bg-[var(--color-primary)]/20 font-black text-[10px] uppercase tracking-widest transition-all"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  Imprimir Contrato
-                </button>
+              <div className="px-6 py-4 border-t border-[var(--border-soft)] flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => imprimirContrato({
+                      contrato: contratoActivo,
+                      items: detalleItems,
+                      pagos: detallePagos,
+                      tenant,
+                    })}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--color-primary)]/30 text-[var(--color-primary)] bg-[var(--color-primary-dim)] hover:bg-[var(--color-primary)]/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    Imprimir Contrato
+                  </button>
+                  {(contratoActivo?.estado === 'devuelto_ok' || contratoActivo?.estado === 'problemas_resueltos') && (
+                    <>
+                      <button
+                        onClick={() => imprimirComprobante({ contrato: contratoActivo, items: detalleItems, pagos: detallePagos, tenant, tipo: 'comprobante' })}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-green-500/30 text-green-400 bg-green-500/10 hover:bg-green-500/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                      >
+                        <Receipt className="h-3.5 w-3.5" />
+                        Comprobante
+                      </button>
+                      <button
+                        onClick={() => imprimirComprobante({ contrato: contratoActivo, items: detalleItems, pagos: detallePagos, tenant, tipo: 'factura' })}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-yellow-500/30 text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Factura <span className="text-[8px] opacity-60 normal-case">(SRI próx.)</span>
+                      </button>
+                    </>
+                  )}
+                </div>
                 <button
                   onClick={() => setIsVerOpen(false)}
                   className="px-5 py-2.5 rounded-xl border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] font-black text-[10px] uppercase tracking-widest transition-all hover:bg-[var(--bg-surface-3)]"
@@ -1868,19 +1889,39 @@ const HistorialView = () => {
 
             {/* Pie: botones de acción */}
             {!detalleLoading && (
-              <div className="px-6 py-4 border-t border-[var(--border-soft)] flex items-center justify-between gap-4">
-                <button
-                  onClick={() => imprimirContrato({
-                    contrato: contratoActivo,
-                    items: detalleItems,
-                    pagos: detallePagos,
-                    tenant,
-                  })}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--color-primary)]/30 text-[var(--color-primary)] bg-[var(--color-primary-dim)] hover:bg-[var(--color-primary)]/20 font-black text-[10px] uppercase tracking-widest transition-all"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  Imprimir Contrato
-                </button>
+              <div className="px-6 py-4 border-t border-[var(--border-soft)] flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => imprimirContrato({
+                      contrato: contratoActivo,
+                      items: detalleItems,
+                      pagos: detallePagos,
+                      tenant,
+                    })}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--color-primary)]/30 text-[var(--color-primary)] bg-[var(--color-primary-dim)] hover:bg-[var(--color-primary)]/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    Imprimir Contrato
+                  </button>
+                  {(contratoActivo?.estado === 'devuelto_ok' || contratoActivo?.estado === 'problemas_resueltos') && (
+                    <>
+                      <button
+                        onClick={() => imprimirComprobante({ contrato: contratoActivo, items: detalleItems, pagos: detallePagos, tenant, tipo: 'comprobante' })}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-green-500/30 text-green-400 bg-green-500/10 hover:bg-green-500/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                      >
+                        <Receipt className="h-3.5 w-3.5" />
+                        Comprobante
+                      </button>
+                      <button
+                        onClick={() => imprimirComprobante({ contrato: contratoActivo, items: detalleItems, pagos: detallePagos, tenant, tipo: 'factura' })}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-yellow-500/30 text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20 font-black text-[10px] uppercase tracking-widest transition-all"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Factura <span className="text-[8px] opacity-60 normal-case">(SRI próx.)</span>
+                      </button>
+                    </>
+                  )}
+                </div>
                 <button
                   onClick={() => setIsVerOpen(false)}
                   className="px-5 py-2.5 rounded-xl border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] font-black text-[10px] uppercase tracking-widest transition-all hover:bg-[var(--bg-surface-3)]"

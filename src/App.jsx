@@ -603,14 +603,14 @@ function App() {
             <Route index element={<Descuentos />} />
           </Route>
 
-          {/* Comprobantes (Solo Admin) */}
+          {/* Facturador SRI (Solo Admin) */}
           <Route
             path="/comprobantes"
             element={
               <ProtectedRoute allowedRoles={["tenant_admin"]}>
                 <ModuleLayout
-                  title="Comprobantes"
-                  description="Documentos generados"
+                  title="Facturador SRI"
+                  description="Comprobantes y cotizaciones"
                   tabs={[]}
                 />
               </ProtectedRoute>

@@ -32,7 +32,7 @@ const MenuPrincipal = [
   { name: 'Proveedores', href: '/proveedores', icon: Factory, roles: ['tenant_admin'] },
   { name: 'Caja', href: '/caja', icon: Landmark, roles: ['tenant_admin'] },
   { name: 'Descuentos', href: '/descuentos', icon: Percent, roles: ['tenant_admin'] },
-  { name: 'Comprobantes', href: '/comprobantes', icon: Receipt, roles: ['tenant_admin'] },
+  { name: 'Facturador SRI', href: '/comprobantes', icon: Receipt, roles: ['tenant_admin'] },
 
   // --- SUPER ADMIN ROUTES ---
   { name: 'Panel Maestro', href: '/super-admin/negocios', icon: ShieldCheck, roles: ['super_admin'] },
