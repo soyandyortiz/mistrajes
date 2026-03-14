@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Store, Shield, Lock, FileText } from 'lucide-react';
+import { Shield, Lock, FileText } from 'lucide-react';
 
 const PublicFooter = () => {
   return (
@@ -12,9 +12,7 @@ const PublicFooter = () => {
           {/* Brand Column */}
           <div className="md:col-span-4 space-y-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-[var(--color-primary)] rounded-xl flex items-center justify-center border border-[var(--border-soft)] shadow-lg shadow-[var(--color-primary)]/20">
-                <Store className="h-5 w-5 text-white" />
-              </div>
+              <img src="/icono.svg" alt="MisTrajes" className="h-10 w-10 object-contain drop-shadow-lg" />
               <span className="text-2xl font-black tracking-tighter text-[var(--text-primary)] uppercase">
                 Mis<span className="text-[var(--color-primary)] italic">Trajes</span>
               </span>

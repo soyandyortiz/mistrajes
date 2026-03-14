@@ -388,6 +388,7 @@ BEGIN
     -- ── 3. Insertar Contrato base ────────────────────────────
     INSERT INTO contratos (
         tenant_id, cliente_id, canal, estado, tipo_envio,
+        direccion_evento,
         fecha_salida, fecha_evento, fecha_devolucion,
         subtotal, monto_descuento, total,
         anticipo_pagado, saldo_pendiente,
@@ -402,6 +403,7 @@ BEGIN
         'presencial',
         'reservado',
         v_tipo_envio_val::tipo_envio,
+        NULLIF(payload->'contrato'->>'direccion_evento', ''),
         (payload->'contrato'->>'fecha_salida')::TIMESTAMPTZ,
         NULLIF(payload->'contrato'->>'fecha_evento', '')::TIMESTAMPTZ,
         (payload->'contrato'->>'fecha_devolucion')::TIMESTAMPTZ,

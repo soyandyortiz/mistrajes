@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { validarCedula, validarRUC } from "../../../utils/validacionEcuador";
 import { supabase } from "../../../lib/supabase";
 import { useAuthStore } from "../../../stores/authStore";
 import { toast } from "sonner";
@@ -19,7 +20,9 @@ import {
   CheckCircle2,
   Calendar,
   CreditCard,
+  Download,
 } from "lucide-react";
+import { exportarCSV, formatFecha } from "../../../utils/exportarCSV";
 
 const MOCK_PROVINCES_ECUADOR = [
   "Azuay",
@@ -326,6 +329,36 @@ export default function Clientes() {
     return true;
   });
 
+  const handleExportarClientes = () => {
+    if (listaFiltrada.length === 0) return;
+
+    exportarCSV({
+      nombreArchivo: `clientes_${profile?.tenant?.nombre_negocio || 'mistrajes'}`,
+      filas: listaFiltrada,
+      columnas: [
+        { titulo: 'Tipo',                   obtener: r => r.tipo_cliente === 'empresa' ? 'Empresa' : 'Persona Natural' },
+        { titulo: 'Nombre / Razón Social',  obtener: r => r.nombre_empresa || r.nombre_completo || '' },
+        { titulo: 'Cédula / RUC',           obtener: r => r.ruc_empresa || r.identificacion || '' },
+        { titulo: 'Email',                  obtener: r => r.email || '' },
+        { titulo: 'WhatsApp',               obtener: r => r.whatsapp || '' },
+        { titulo: 'Provincia',              obtener: r => r.provincia || '' },
+        { titulo: 'Ciudad',                 obtener: r => r.ciudad || '' },
+        { titulo: 'Dirección',              obtener: r => r.direccion_domicilio || '' },
+        { titulo: 'Ref. Familiar 1',        obtener: r => r.referencia1_nombre || '' },
+        { titulo: 'Tel. Ref. 1',            obtener: r => r.referencia1_celular || '' },
+        { titulo: 'Ref. Familiar 2',        obtener: r => r.referencia2_nombre || '' },
+        { titulo: 'Tel. Ref. 2',            obtener: r => r.referencia2_celular || '' },
+        { titulo: 'Responsable (Empresa)',  obtener: r => r.responsable_nombre || '' },
+        { titulo: 'Tel. Responsable',       obtener: r => r.responsable_celular || '' },
+        { titulo: 'Email Responsable',      obtener: r => r.responsable_email || '' },
+        { titulo: 'Total Contratos',        obtener: r => r.total_contratos ?? 0 },
+        { titulo: 'Fecha de Registro',      obtener: r => formatFecha(r.created_at) },
+      ],
+    });
+
+    toast.success(`${listaFiltrada.length} cliente(s) exportados correctamente`);
+  };
+
   const getStatusBadge = (estado) => {
     if (estado === "devuelto_ok")
       return (
@@ -402,6 +435,23 @@ export default function Clientes() {
                 onChange={(e) => setFilterCiudad(e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Barra de resultados + exportar */}
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              {listaFiltrada.length === clientes.length
+                ? `${clientes.length} cliente(s) en total`
+                : `${listaFiltrada.length} de ${clientes.length} cliente(s) (filtrado)`}
+            </p>
+            <button
+              onClick={handleExportarClientes}
+              disabled={listaFiltrada.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/15 font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Exportar Clientes
+            </button>
           </div>
 
           {/* Tabla */}
@@ -742,6 +792,7 @@ export default function Clientes() {
                       handleChange("identificacion", e.target.value)
                     }
                   />
+                  {(() => { const r = validarCedula(formData.identificacion); return r.valido !== null ? <p className={`text-[9px] font-bold mt-1 ${r.valido ? 'text-green-400' : 'text-red-400'}`}>{r.valido ? '✓' : '✗'} {r.mensaje}</p> : null; })()}
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">
@@ -923,6 +974,7 @@ export default function Clientes() {
                       handleChange("identificacion", e.target.value)
                     }
                   />
+                  {(() => { const r = validarRUC(formData.identificacion); return r.valido !== null ? <p className={`text-[9px] font-bold mt-1 ${r.valido ? 'text-green-400' : 'text-red-400'}`}>{r.valido ? '✓' : '✗'} {r.mensaje}</p> : null; })()}
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">

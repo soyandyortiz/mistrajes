@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
-import { ArrowRightLeft, ArrowDownCircle, ArrowUpCircle, Banknote, Loader2, Plus, Calendar } from 'lucide-react';
+import { ArrowRightLeft, ArrowDownCircle, ArrowUpCircle, Banknote, Loader2, Plus, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Helper: genera string local YYYY-MM-DD
@@ -13,11 +13,17 @@ const getLocalDateString = (date = new Date()) => {
 };
 
 // Helper: genera boundaries de inicio y fin del día en timezone local como ISO strings
-const getLocalDayBoundaries = () => {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+const getLocalDayBoundaries = (dateStr = null) => {
+  const ref = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
+  const start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), 0, 0, 0);
+  const end = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), 23, 59, 59);
   return { startISO: start.toISOString(), endISO: end.toISOString() };
+};
+
+const shiftDate = (dateStr, days) => {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 const Caja = () => {
@@ -25,6 +31,9 @@ const Caja = () => {
   const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
+  const isToday = selectedDate === getLocalDateString();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -37,17 +46,18 @@ const Caja = () => {
   });
 
   /**
-   * Fetches today's ingresos and egresos from their respective real tables
+   * Fetches ingresos and egresos for the selected date from their respective tables
    * and merges them into a unified movimientos list for the UI.
+   * Each sub-query is wrapped independently so a single failure doesn't blank the whole view.
    */
   const fetchMovimientos = async () => {
     setLoading(true);
-    try {
-      const hoy = getLocalDateString();
-      const { startISO, endISO } = getLocalDayBoundaries();
-      let listaUnificada = [];
+    const hoy = selectedDate;
+    const { startISO, endISO } = getLocalDayBoundaries(hoy);
+    let listaUnificada = [];
 
-      // 1. Fetch ingresos de hoy — query simple
+    // 1. Ingresos del día
+    try {
       const { data: ingresosData, error: errIng } = await supabase
         .from('ingresos')
         .select('*')
@@ -58,7 +68,6 @@ const Caja = () => {
 
       if (errIng && errIng.code !== '42P01') throw errIng;
 
-      // 1b. Obtener métodos de pago y códigos de contrato por separado
       if (ingresosData && ingresosData.length > 0) {
         const pagoIds = ingresosData.map(i => i.pago_contrato_id).filter(Boolean);
         const contratoIds = ingresosData.map(i => i.contrato_id).filter(Boolean);
@@ -85,8 +94,12 @@ const Caja = () => {
           fuente: 'ingresos'
         })));
       }
+    } catch (e) {
+      console.warn('[Caja] Error al cargar ingresos:', e);
+    }
 
-      // 2. Fetch egresos de hoy (solo los de contado/caja)
+    // 2. Egresos de contado del día
+    try {
       const { data: egresosData, error: errEgr } = await supabase
         .from('egresos')
         .select('*')
@@ -98,23 +111,26 @@ const Caja = () => {
 
       if (errEgr && errEgr.code !== '42P01') throw errEgr;
 
-      // Map egresos to unified format
       if (egresosData) {
         listaUnificada.push(...egresosData.map(egr => ({
           id: egr.id,
           tipo: 'egreso',
           concepto: egr.descripcion || 'Egreso de Contado',
           monto: Number(egr.monto_total || 0),
-          metodo_pago: egr.metodo_pago || egr.modalidad || 'contado',
+          metodo_pago: egr.modalidad || 'Contado',
           created_at: egr.created_at || egr.fecha_egreso,
           fuente: 'egresos'
         })));
       }
+    } catch (e) {
+      console.warn('[Caja] Error al cargar egresos:', e);
+    }
 
-      // 3. Fetch abonos (pagos_egreso) de hoy
+    // 3. Abonos a CxP (pagos_egreso) del día
+    try {
       const { data: abonosData, error: errAbo } = await supabase
         .from('pagos_egreso')
-        .select('*, egresos(descripcion, categoria)')
+        .select('*')
         .eq('tenant_id', profile.tenant_id)
         .gte('fecha_pago', hoy)
         .lte('fecha_pago', hoy)
@@ -122,35 +138,30 @@ const Caja = () => {
 
       if (errAbo && errAbo.code !== '42P01') throw errAbo;
 
-      // Map abonos to unified format
       if (abonosData) {
         listaUnificada.push(...abonosData.map(abono => ({
           id: abono.id,
           tipo: 'egreso',
-          concepto: `Cuota/Abono CxP: ${abono.egresos?.descripcion || 'Egreso a crédito'}`,
+          concepto: `Cuota/Abono CxP: ${abono.referencia || 'Pago de cuota'}`,
           monto: Number(abono.monto || 0),
           metodo_pago: abono.referencia || 'Pago de Cuota',
           created_at: abono.created_at || abono.fecha_pago,
           fuente: 'pagos_egreso'
         })));
       }
-
-      // Sort by date descending
-      listaUnificada.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-      setMovimientos(listaUnificada);
-    } catch (error) {
-      toast.error('Error al cargar movimientos de caja');
-      console.error('Error fetchMovimientos:', error);
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      console.warn('[Caja] Error al cargar abonos CxP:', e);
     }
+
+    listaUnificada.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    setMovimientos(listaUnificada);
+    setLoading(false);
   };
 
   useEffect(() => {
     if (!authLoading && profile?.tenant_id) fetchMovimientos();
     else if (!authLoading && !profile?.tenant_id) setLoading(false);
-  }, [authLoading, profile?.tenant_id]);
+  }, [authLoading, profile?.tenant_id, selectedDate]);
 
   /**
    * Handles submitting a new manual transaction.
@@ -281,17 +292,58 @@ const Caja = () => {
           </div>
       </div>
 
-      <div className="flex justify-between items-center pt-8">
+      {/* Navegador de Fecha */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-8">
         <div>
           <h2 className="text-xl font-black text-[var(--text-primary)] tracking-widest uppercase">Libro de Transacciones</h2>
+          {!isToday && (
+            <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mt-1 flex items-center gap-1">
+              <Calendar className="h-3 w-3" /> Vista histórica — no son datos de hoy
+            </p>
+          )}
         </div>
-        <div className="flex gap-4">
-            <button onClick={() => { setFormData(prev => ({...prev, tipo: 'egreso'})); setIsModalOpen(true); }} className="px-4 py-2 rounded-xl border border-rose-500/20 text-rose-400 font-bold text-[10px] uppercase tracking-widest hover:bg-rose-500/10 transition-colors flex items-center">
-              <ArrowUpCircle className="h-4 w-4 mr-2" /> Extraer
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Navegador de días */}
+          <div className="flex items-center bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
+              className="w-8 h-8 rounded-lg hover:bg-[var(--bg-surface-3)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
             </button>
-            <button onClick={() => { setFormData(prev => ({...prev, tipo: 'ingreso'})); setIsModalOpen(true); }} className="px-4 py-2 rounded-xl bg-green-500/10 text-green-400 font-bold text-[10px] uppercase tracking-widest hover:bg-green-500/20 transition-colors flex items-center border border-green-500/20">
-              <ArrowDownCircle className="h-4 w-4 mr-2" /> Inyectar
+            <input
+              type="date"
+              value={selectedDate}
+              max={getLocalDateString()}
+              onChange={e => setSelectedDate(e.target.value)}
+              className="bg-transparent border-0 text-[var(--text-primary)] text-[11px] font-bold uppercase tracking-widest focus:outline-none dark-date px-1 w-32"
+            />
+            <button
+              onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}
+              disabled={isToday}
+              className="w-8 h-8 rounded-lg hover:bg-[var(--bg-surface-3)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-4 w-4" />
             </button>
+          </div>
+          {!isToday && (
+            <button
+              onClick={() => setSelectedDate(getLocalDateString())}
+              className="px-3 py-2 rounded-xl bg-primary/10 text-primary font-bold text-[10px] uppercase tracking-widest hover:bg-primary/20 transition-colors border border-primary/20"
+            >
+              Hoy
+            </button>
+          )}
+          {isToday && (
+            <>
+              <button onClick={() => { setFormData(prev => ({...prev, tipo: 'egreso'})); setIsModalOpen(true); }} className="px-4 py-2 rounded-xl border border-rose-500/20 text-rose-400 font-bold text-[10px] uppercase tracking-widest hover:bg-rose-500/10 transition-colors flex items-center">
+                <ArrowUpCircle className="h-4 w-4 mr-2" /> Extraer
+              </button>
+              <button onClick={() => { setFormData(prev => ({...prev, tipo: 'ingreso'})); setIsModalOpen(true); }} className="px-4 py-2 rounded-xl bg-green-500/10 text-green-400 font-bold text-[10px] uppercase tracking-widest hover:bg-green-500/20 transition-colors flex items-center border border-green-500/20">
+                <ArrowDownCircle className="h-4 w-4 mr-2" /> Inyectar
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -311,7 +363,7 @@ const Caja = () => {
               {loading ? (
                 <tr><td colSpan="5" className="px-6 py-12 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></td></tr>
               ) : movimientos.length === 0 ? (
-                <tr><td colSpan="5" className="px-6 py-12 text-center text-[var(--text-muted)] text-xs tracking-widest uppercase font-bold">Registro Ledger Inactivo Hoy</td></tr>
+                <tr><td colSpan="5" className="px-6 py-12 text-center text-[var(--text-muted)] text-xs tracking-widest uppercase font-bold">Sin movimientos para {isToday ? 'hoy' : selectedDate}</td></tr>
               ) : (
                 movimientos.map((mov) => (
                   <tr key={mov.id} className="hover:bg-[var(--bg-surface-2)] transition-colors group">

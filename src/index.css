@@ -59,6 +59,12 @@
     --sector-formal-from: #f59e0b;
     --sector-formal-to: #f97316;
 
+    /* — WARNING / ALERTA (amber adaptativo) — */
+    --color-warning: #fbbf24;                    /* amber-400 — visible sobre oscuro */
+    --color-warning-subtle: rgba(251,191,36,0.08);
+    --color-warning-border: rgba(251,191,36,0.22);
+    --color-warning-strong: rgba(251,191,36,0.55);
+
     /* — NAVBAR — */
     --navbar-bg: rgba(8, 8, 16, 0.85);
     --navbar-border: rgba(255, 255, 255, 0.06);
@@ -133,6 +139,12 @@
     --sector-novia-to: #db2777;
     --sector-formal-from: #d97706;
     --sector-formal-to: #ea580c;
+
+    /* — WARNING / ALERTA (amber adaptativo) — */
+    --color-warning: #b45309;                    /* amber-700 — contraste 4.6:1 sobre blanco (AA) */
+    --color-warning-subtle: rgba(180,83,9,0.07);
+    --color-warning-border: rgba(180,83,9,0.22);
+    --color-warning-strong: rgba(180,83,9,0.45);
 
     /* — NAVBAR — */
     --navbar-bg: rgba(245, 245, 252, 0.92);
@@ -440,6 +452,25 @@
     color: var(--text-primary) !important;
   }
 
+  /* Campos bloqueados — fieldset:disabled envuelve todos los inputs del cliente auto-completado */
+  fieldset:disabled .input-guambra {
+    background-color: var(--bg-surface-2) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-soft) !important;
+    border-style: dashed !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+    box-shadow: none !important;
+  }
+  fieldset:disabled .input-guambra:focus {
+    border-color: var(--border-soft) !important;
+    box-shadow: none !important;
+    background-color: var(--bg-surface-2) !important;
+  }
+  fieldset:disabled select.input-guambra {
+    pointer-events: none;
+  }
+
   /* Input con ícono a la izquierda — viene DESPUÉS de .input-guambra para ganar el cascade */
   .input-guambra-search {
     padding-left: 2.75rem !important;
@@ -540,11 +571,14 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="month"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  filter: var(--text-primary-filter, none);
+  filter: brightness(0) opacity(0.5);
 }
 
-[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: brightness(0) invert(1) !important;
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1) opacity(0.6) !important;
 }
 
 /* ============================================================

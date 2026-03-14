@@ -11,7 +11,11 @@
       "Bash(grep -r \"Servicio Suspendido\\\\|bg-gray-900\\\\|text-white\\\\|bg-red-600\" /d/desarrollo-web/multitenant-mistrajes/src --include=\"*.jsx\" --include=\"*.js\" --include=\"*.css\" 2>/dev/null | head -30)",
       "Bash(grep -r \"text-white\\\\|bg-red\\\\|text-red\\\\|bg-gray\\\\|#ffffff\\\\|#ef4444\" /d/desarrollo-web/multitenant-mistrajes/src/components --include=\"*.jsx\" 2>/dev/null | grep -E \"\\(Notification|Banner|Suspension|WhatsApp\\)\" | head -20)",
       "Bash(curl -s \"https://jwnabxbiekmempmocdge.supabase.co/rest/v1/tenant_suscripciones?select=*&limit=2\" \\\\\n  -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\" \\\\\n  -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3bmFieGJpZWttZW1wbW9jZGdlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjUwNDQ4MywiZXhwIjoyMDg4MDgwNDgzfQ.1fSexyovI8SAQ8I2o6d8oiFM8Co0WmuybjOs6Z_ioaU\")",
-      "Bash(cd \"D:\\\\desarrollo-web\\\\multitenant-mistrajes\" && npx eslint src/paginas/administracion/Operaciones/NuevoContrato.jsx src/paginas/administracion/GestionContratos.jsx 2>&1)"
+      "Bash(cd \"D:\\\\desarrollo-web\\\\multitenant-mistrajes\" && npx eslint src/paginas/administracion/Operaciones/NuevoContrato.jsx src/paginas/administracion/GestionContratos.jsx 2>&1)",
+      "Bash(wait b12h3ufug; cat \"C:\\\\Users\\\\andyo\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--desarrollo-web-multitenant-mistrajes\\\\744f9d8f-3262-4e86-85e0-97649555ff8f\\\\tasks\\\\b12h3ufug.output\" 2>/dev/null || echo \"No SQL files found with table definitions\")",
+      "Bash(cd \"D:\\\\desarrollo-web\\\\multitenant-mistrajes\" && npx vite build --mode development 2>&1 | tail -20)",
+      "Bash(cd \"D:\\\\desarrollo-web\\\\multitenant-mistrajes\" && npx vite build --mode development 2>&1 | tail -10)",
+      "Bash(cd \"D:\\\\desarrollo-web\\\\multitenant-mistrajes\" && npx vite build --mode development 2>&1 | tail -8)"
     ]
   }
 }

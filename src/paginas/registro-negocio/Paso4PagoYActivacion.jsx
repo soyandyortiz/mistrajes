@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useRegistroNegocioStore } from '../../stores/registroNegocioStore';
 import { supabase } from '../../lib/supabase';
-import { CreditCard, Loader2, Store, ExternalLink } from 'lucide-react';
+import { CreditCard, Loader2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Paso4PagoYActivacion = () => {
@@ -65,13 +65,11 @@ const Paso4PagoYActivacion = () => {
       
       <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 sm:p-10 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
-           <Store className="h-32 w-32 text-primary" />
+           <img src="/icono.svg" alt="" className="h-32 w-32 object-contain" />
         </div>
 
         <h3 className="text-2xl font-black text-white mb-10 flex items-center tracking-tighter">
-            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center mr-4">
-               <Store className="h-6 w-6 text-primary" />
-            </div>
+            <img src="/icono.svg" alt="MisTrajes" className="h-10 w-10 object-contain mr-4" />
             {businessData.name}
         </h3>
         
@@ -125,7 +123,7 @@ const Paso4PagoYActivacion = () => {
             </div>
           ) : (
             <div className="flex items-center">
-              <Store className="-ml-1 mr-3 h-5 w-5" />
+              <img src="/icono.svg" alt="" className="-ml-1 mr-3 h-5 w-5 object-contain" />
               Enviar Solicitud
             </div>
           )}

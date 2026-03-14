@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { validarCedula } from '../../../utils/validacionEcuador';
 import { supabase, supabaseAdmin } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { toast } from 'sonner';
@@ -571,7 +572,8 @@ export default function Empleados() {
                       </div>
                       <div>
                          <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Cédula de Identidad <span className="text-red-400">*</span></label>
-                         <input required type="text" className="input-guambra" value={formData.cedula} onChange={e => handleChange('cedula', e.target.value)} />
+                         <input required type="text" className="input-guambra" maxLength={10} value={formData.cedula} onChange={e => handleChange('cedula', e.target.value)} />
+                         {(() => { const r = validarCedula(formData.cedula); return r.valido !== null ? <p className={`text-[9px] font-bold mt-1 ${r.valido ? 'text-green-400' : 'text-red-400'}`}>{r.valido ? '✓' : '✗'} {r.mensaje}</p> : null; })()}
                       </div>
                       <div>
                          <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Contacto Principal (WhatsApp) <span className="text-red-400">*</span></label>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../../lib/supabase";
 import { useAuthStore } from "../../../stores/authStore";
 import { useTenantStore } from "../../../stores/tenantStore";
-import { Save, Loader2, Image as ImageIcon, Store, MonitorPlay } from "lucide-react";
+import { Save, Loader2, Image as ImageIcon, MonitorPlay } from "lucide-react";
 
 // TODO: Helper to mock upload or actual upload to bucket
 const ConfiguracionesGenerales = () => {
@@ -153,7 +153,7 @@ const ConfiguracionesGenerales = () => {
              <div className="space-y-4">
                  <div>
                    <label className="text-xs font-bold text-[var(--text-secondary)] uppercase flex items-center gap-2 mb-1">
-                      <Store className="h-4 w-4 text-[var(--text-muted)]" />
+                      <img src="/icono.svg" alt="" className="h-4 w-4 object-contain" />
                       Logotipo de la Empresa
                    </label>
                    <p className="text-[10px] text-[var(--text-muted)] mb-3">Se mostrará en el menú del sistema y en la cabecera de la tienda online (Recomendado apaisado/rectangular). <span className="font-bold text-[var(--text-secondary)]">Máx. 5MB</span></p>

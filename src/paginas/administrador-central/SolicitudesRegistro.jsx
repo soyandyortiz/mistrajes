@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabaseAdmin } from '../../lib/supabase';
-import { Loader2, CheckCircle, XCircle, Store, Mail, Phone, MapPin, Building, CreditCard, Rocket } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Mail, Phone, MapPin, Building, CreditCard, Rocket } from 'lucide-react';
 
 const SolicitudesRegistro = () => {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -177,9 +177,7 @@ const SolicitudesRegistro = () => {
         </div>
       ) : solicitudes.length === 0 ? (
         <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-3xl p-12 text-center">
-            <div className="h-16 w-16 mx-auto bg-[var(--color-primary-dim)] rounded-full flex items-center justify-center mb-4 border border-[var(--color-primary)]/20">
-               <Store className="h-8 w-8 text-[var(--color-primary)]" />
-            </div>
+            <img src="/icono.svg" alt="MisTrajes" className="h-16 w-16 mx-auto object-contain mb-4" />
             <h3 className="text-lg font-black text-[var(--text-primary)] mb-2 uppercase tracking-tight">Cero Pendientes</h3>
             <p className="text-sm text-[var(--text-muted)] font-bold uppercase tracking-widest">No hay solicitudes nuevas en este momento.</p>
         </div>

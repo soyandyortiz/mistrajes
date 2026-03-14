@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Navigate, NavLink, useLocation } from 'react-router-dom';
 import {
-  Store, User, LogOut, ClipboardList, Users,
+  User, LogOut, ClipboardList, Users,
   Menu, X, ChevronLeft, ChevronRight, Puzzle,
   TrendingUp, TrendingDown, Factory, ShoppingCart, Landmark,
   Receipt, Calendar as CalendarIcon, Shirt, Bell, Tag,
   Ban, Clock, Wrench, Info, LayoutDashboard, ShieldCheck,
-  Database, Megaphone, CheckSquare, BookOpen
+  Database, Megaphone, CheckSquare, BookOpen, Percent
 } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 import { useAuthStore } from '../../stores/authStore';
@@ -31,6 +31,7 @@ const MenuPrincipal = [
   { name: 'Egresos', href: '/egresos', icon: TrendingDown, roles: ['tenant_admin'] },
   { name: 'Proveedores', href: '/proveedores', icon: Factory, roles: ['tenant_admin'] },
   { name: 'Caja', href: '/caja', icon: Landmark, roles: ['tenant_admin'] },
+  { name: 'Descuentos', href: '/descuentos', icon: Percent, roles: ['tenant_admin'] },
   { name: 'Comprobantes', href: '/comprobantes', icon: Receipt, roles: ['tenant_admin'] },
 
   // --- SUPER ADMIN ROUTES ---
@@ -397,9 +398,7 @@ const DiseñoAdministracion = () => {
                         <img src={tenant.configuracion_tienda.icono_url} alt="Icono" className="h-full w-full object-cover" />
                     </div>
                   ) : (
-                    <div className="h-8 w-8 rounded-xl bg-[var(--color-primary-dim)] flex items-center justify-center shrink-0">
-                      <Store className="h-4 w-4 text-[var(--color-primary)]" />
-                    </div>
+                    <img src="/icono.svg" alt="MisTrajes" className="h-8 w-8 object-contain shrink-0" />
                   )
                )
             ) : (
@@ -422,9 +421,7 @@ const DiseñoAdministracion = () => {
                     </div>
                   ) : (
                     <>
-                      <div className="h-8 w-8 rounded-xl bg-[var(--color-primary-dim)] flex items-center justify-center shrink-0">
-                        <Store className="h-4 w-4 text-[var(--color-primary)]" />
-                      </div>
+                      <img src="/icono.svg" alt="MisTrajes" className="h-9 w-9 object-contain shrink-0" />
                       <div className="flex flex-col">
                         <span className="text-sm font-black tracking-tighter text-[var(--text-primary)] uppercase leading-none truncate max-w-[160px]">
                           {tenant?.configuracion_tienda?.nombre_negocio || tenant?.nombre_negocio || 'Mi Negocio'}

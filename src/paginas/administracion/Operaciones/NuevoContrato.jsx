@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { validarCedula, validarRUC, validarIdentificacion } from '../../../utils/validacionEcuador';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { toast } from 'sonner';
-import { 
-  User, Building2, Calendar, MapPin, Search, Plus, Trash2, Loader2,
+import {
+  User, Building2, Calendar, MapPin, Search, Plus, Minus, Trash2, Loader2,
   CreditCard, ShieldCheck, Printer, CheckCircle2, ChevronRight,
   ChevronLeft, AlertTriangle, PackageSearch, XCircle, Hash,
-  Lock, Unlock
+  Lock, Unlock, Pencil, SlidersHorizontal
 } from 'lucide-react';
 
 
@@ -23,12 +24,18 @@ export default function NuevoContrato({ onVolver }) {
   const [clientType, setClientType] = useState('natural'); // 'natural' | 'empresa'
   const [isClientReadOnly, setIsClientReadOnly] = useState(false);
   const [cliente, setCliente] = useState({
-    identificacion: '', nombres: '', email: '', telefono: '', 
-    pais: 'Ecuador', provincia: '', ciudad: '', direccion: '', 
-    direccion_evento: '', referencia_nombre: '', referencia_celular: '',
-    razon_social: '', tipo_empresa: '', responsable_nombre: '', 
-    responsable_celular: '', responsable_email: ''
+    // Datos comunes
+    identificacion: '', nombres: '', email: '', telefono: '',
+    pais: 'Ecuador', provincia: '', ciudad: '', direccion: '',
+    // Referencias (natural y empresa)
+    referencia_nombre: '', referencia_celular: '',
+    referencia_nombre_2: '', referencia_celular_2: '',
+    // Datos exclusivos empresa
+    razon_social: '', ruc_empresa: '', tipo_empresa: '',
+    responsable_nombre: '', responsable_celular: '', responsable_email: '',
   });
+  // Dirección del evento: pertenece al contrato, no al cliente
+  const [direccionEvento, setDireccionEvento] = useState('');
 
   const buscarCliente = async () => {
     if(!busquedaDoc) return;
@@ -44,20 +51,31 @@ export default function NuevoContrato({ onVolver }) {
 
       if (data) {
         setIsClientReadOnly(true);
-        const isEmpr = data.tipo_entidad === 'empresa' || data.identificacion?.length === 13;
+        const isEmpr = data.tipo_entidad === 'empresa';
         setClientType(isEmpr ? 'empresa' : 'natural');
         setCliente(prev => ({
           ...prev,
-          identificacion: data.identificacion,
-          nombres: data.nombre_completo || '',
-          email: data.email || '',
-          telefono: data.whatsapp || '',           // campo real: whatsapp
-          direccion: data.direccion_domicilio || '', // campo real: direccion_domicilio
-          ciudad: data.ciudad || '',
-          provincia: data.provincia || '',
-          razon_social: data.nombre_completo || '',
-          nombre_empresa: data.nombre_empresa || '',
-          ruc_empresa: data.ruc_empresa || '',
+          // Datos comunes
+          identificacion:      data.identificacion || '',
+          nombres:             data.nombre_completo || '',
+          email:               data.email || '',
+          telefono:            data.whatsapp || '',
+          direccion:           data.direccion_domicilio || '',
+          ciudad:              data.ciudad || '',
+          provincia:           data.provincia || '',
+          pais:                data.pais || 'Ecuador',
+          // Referencias
+          referencia_nombre:   data.nombre_referencia || '',
+          referencia_celular:  data.telefono_referencia || '',
+          referencia_nombre_2: data.nombre_referencia_2 || '',
+          referencia_celular_2:data.telefono_referencia_2 || '',
+          // Empresa
+          razon_social:        data.nombre_empresa || data.nombre_completo || '',
+          ruc_empresa:         data.ruc_empresa || '',
+          tipo_empresa:        data.tipo_empresa || '',
+          responsable_nombre:  data.nombre_responsable_empresa || '',
+          responsable_celular: data.telefono_responsable_empresa || '',
+          responsable_email:   data.email_responsable_empresa || '',
         }));
         toast.success('Cliente encontrado', { id: 'search-client' });
       } else {
@@ -196,6 +214,18 @@ export default function NuevoContrato({ onVolver }) {
   const [resultadosProd, setResultadosProd] = useState([]);
   const [buscandoProd, setBuscandoProd] = useState(false);
   const [cargandoPiezas, setCargandoPiezas] = useState(null);
+  const searchRef = useRef(null);
+
+  // Cerrar resultados al hacer clic fuera del cuadro de búsqueda
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setResultadosProd([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   // Cada item: { id, nombre, precio_unitario, thumbnail, cantidad_total, fase, piezas }
   // fase: 'cantidad' (paso A) | 'tallas' (paso B) | 'confirmado' (paso C)
   // piezas: [{ id, nombre, tallasDisponibles:[{talla,stock}], tallasCantidades:{[talla]:cantidad} }]
@@ -310,16 +340,69 @@ export default function NuevoContrato({ onVolver }) {
     }
   };
 
-  // Confirmar cantidad total → pasar a fase tallas
+  // Verificar stock disponible contra la BD (considerando contratos activos en el rango de fechas)
+  const verificarStockDisponible = async (prodId) => {
+    if (!fechaSalidaFull || !fechaDevolucionFull) return;
+    const prod = productosCarrito.find(p => p.id === prodId);
+    if (!prod) return;
+    const piezaIds = prod.piezas.map(pz => pz.id).filter(Boolean);
+    if (piezaIds.length === 0) return;
+
+    setProductosCarrito(prev => prev.map(p =>
+      p.id === prodId ? { ...p, _stockVerificando: true } : p
+    ));
+
+    try {
+      const { data, error } = await supabase.rpc('obtener_stock_disponible_batch', {
+        p_tenant_id:    profile.tenant_id,
+        p_pieza_ids:    piezaIds,
+        p_fecha_salida: fechaSalidaFull,
+        p_fecha_dev:    fechaDevolucionFull,
+      });
+      if (error) throw error;
+
+      // Mapa: { [pieza_id]: { [talla]: disponible } }
+      const dispMap = {};
+      (data || []).forEach(row => {
+        if (!dispMap[row.pieza_id]) dispMap[row.pieza_id] = {};
+        dispMap[row.pieza_id][row.etiqueta_talla] = row.disponible;
+      });
+
+      setProductosCarrito(prev => prev.map(p => {
+        if (p.id !== prodId) return p;
+        return {
+          ...p,
+          _stockVerificando: false,
+          piezas: p.piezas.map(pz => ({
+            ...pz,
+            tallasDisponibles: pz.tallasDisponibles.map(t => ({
+              ...t,
+              stockDisponible: dispMap[pz.id]?.[t.talla] ?? t.stock,
+            })),
+          })),
+        };
+      }));
+    } catch (e) {
+      console.error('Error verificando stock disponible:', e);
+      setProductosCarrito(prev => prev.map(p =>
+        p.id === prodId ? { ...p, _stockVerificando: false } : p
+      ));
+    }
+  };
+
+  // Confirmar cantidad total → pasar a fase tallas y verificar stock
   const confirmarCantidadTotal = (prodId) => {
+    const prod = productosCarrito.find(p => p.id === prodId);
+    if (!prod) return;
+    if (!prod.cantidad_total || prod.cantidad_total < 1)
+      return toast.error('La cantidad debe ser al menos 1');
     setProductosCarrito(prev => prev.map(p => {
       if (p.id !== prodId) return p;
-      if (!p.cantidad_total || p.cantidad_total < 1)
-        return (toast.error('La cantidad debe ser al menos 1'), p);
       // si no tiene piezas, confirmar directamente
-      if (p.piezas.length === 0) return { ...p, fase: 'confirmado' };
-      return { ...p, fase: 'tallas' };
+      if (p.piezas.length === 0) return { ...p, fase: 'confirmado', _yaConfirmado: true };
+      return { ...p, fase: 'tallas', _yaConfirmado: true };
     }));
+    if (prod.piezas.length > 0) verificarStockDisponible(prodId);
   };
 
   // Actualizar cantidad de una talla específica para una pieza
@@ -347,6 +430,16 @@ export default function NuevoContrato({ onVolver }) {
     return prod.piezas.every(pz => totalAsignadoPieza(pz) === prod.cantidad_total);
   };
 
+  // Verifica si alguna talla supera el stock disponible (considerando reservas)
+  const hayExcesoStock = (prod) =>
+    prod.piezas.some(pz =>
+      pz.tallasDisponibles.some(t => {
+        const cant = pz.tallasCantidades[t.talla] ?? 0;
+        const disp = t.stockDisponible ?? t.stock;
+        return cant > disp && cant > 0;
+      })
+    );
+
   // Confirmar distribución de tallas → fase 'confirmado'
   const confirmarTallas = (prodId) => {
     setProductosCarrito(prev => prev.map(p => {
@@ -355,14 +448,28 @@ export default function NuevoContrato({ onVolver }) {
         toast.error('La suma de cantidades por talla debe igualar la cantidad total del producto en cada pieza.');
         return p;
       }
+      if (hayExcesoStock(p)) {
+        toast.error('Hay tallas con cantidad mayor al stock disponible. Reduce las cantidades indicadas en rojo.');
+        return p;
+      }
       return { ...p, fase: 'confirmado' };
     }));
   };
 
-  // Volver a editar tallas
+  // Volver a editar tallas (preserva tallasCantidades existentes)
   const editarTallas = (prodId) => {
     setProductosCarrito(prev => prev.map(p =>
       p.id === prodId ? { ...p, fase: 'tallas' } : p
+    ));
+    verificarStockDisponible(prodId);
+  };
+
+  // Volver a editar cantidad total (preserva tallasCantidades — el usuario ajusta en fase B)
+  const editarCantidad = (prodId) => {
+    setProductosCarrito(prev => prev.map(p =>
+      p.id === prodId
+        ? { ...p, fase: 'cantidad', _yaConfirmado: true, _cantidadAnterior: p.cantidad_total }
+        : p
     ));
   };
 
@@ -398,12 +505,25 @@ export default function NuevoContrato({ onVolver }) {
   const [montoAnticipo, setMontoAnticipo] = useState('');
   // montoAnticipo: editable, pre-llenado con 50% al entrar al paso 4
 
-  const aplicarCupon = () => {
-    if(cupon === 'EXCELENCIA10') {
-      setDescuento(subtotal * 0.10);
-      toast.success('Cupón aplicado: 10% de descuento');
-    } else {
-      toast.error('Cupón inválido');
+  const aplicarCupon = async () => {
+    const codigo = cupon?.trim().toUpperCase();
+    if (!codigo) return toast.error('Ingresa un código de descuento');
+    try {
+      const { data, error } = await supabase
+        .from('cupones_descuento')
+        .select('id, codigo, valor_descuento, es_activo')
+        .eq('tenant_id', profile.tenant_id)
+        .eq('codigo', codigo)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return toast.error('Código de descuento no encontrado');
+      if (!data.es_activo) return toast.error('Este código está desactivado');
+      const montoDesc = subtotal * (data.valor_descuento / 100);
+      setDescuento(montoDesc);
+      toast.success(`Cupón "${codigo}" aplicado: ${data.valor_descuento}% de descuento (-$${montoDesc.toFixed(2)})`);
+    } catch (e) {
+      console.error('Error verificando cupón:', e);
+      toast.error('Error al verificar el código');
     }
   };
 
@@ -486,10 +606,23 @@ export default function NuevoContrato({ onVolver }) {
           direccion_domicilio: cliente.direccion?.trim() || null,
           ciudad: cliente.ciudad?.trim() || null,
           provincia: cliente.provincia?.trim() || null,
-          pais: cliente.pais || 'Ecuador'
+          pais: cliente.pais || 'Ecuador',
+          // Contactos de referencia (comunes a natural y empresa)
+          nombre_referencia:    cliente.referencia_nombre?.trim() || null,
+          telefono_referencia:  cliente.referencia_celular?.trim() || null,
+          nombre_referencia_2:  cliente.referencia_nombre_2?.trim() || null,
+          telefono_referencia_2:cliente.referencia_celular_2?.trim() || null,
+          // Datos exclusivos empresa
+          nombre_empresa:               clientType === 'empresa' ? (cliente.razon_social?.trim() || null) : null,
+          ruc_empresa:                  clientType === 'empresa' ? (cliente.ruc_empresa?.trim() || null) : null,
+          tipo_empresa:                 clientType === 'empresa' ? (cliente.tipo_empresa?.trim() || null) : null,
+          nombre_responsable_empresa:   clientType === 'empresa' ? (cliente.responsable_nombre?.trim() || null) : null,
+          telefono_responsable_empresa: clientType === 'empresa' ? (cliente.responsable_celular?.trim() || null) : null,
+          email_responsable_empresa:    clientType === 'empresa' ? (cliente.responsable_email?.trim() || null) : null,
         },
         contrato: {
           tipo_envio: fechas.tipo_entrega === 'Envío' ? 'envio' : 'retiro',
+          direccion_evento: direccionEvento?.trim() || null,
           fecha_salida: fechaSalidaFull,
           fecha_evento: fechaEventoFull || null,
           fecha_devolucion: fechaDevolucionFull,
@@ -603,150 +736,255 @@ export default function NuevoContrato({ onVolver }) {
                  {/* CONTENIDO PASO 1 */}
                  {step === 1 && (
                      <div className="animate-in slide-in-from-right-4 duration-300 flex-1 flex flex-col">
-                        <h2 className="text-2xl font-black uppercase tracking-tighter text-[var(--text-primary)] mb-2">Búsqueda y Datos del Cliente</h2>
-                        <p className="text-xs text-[var(--text-muted)] font-medium mb-8">Ingresa la cédula o RUC para auto-completar, o registra un cliente nuevo.</p>
-                        
-                        <div className="flex gap-4 mb-8">
-                           <div className="relative flex-1 max-w-md group">
-                               <input 
-                                  type="text" 
-                                  placeholder="Cédula o RUC del cliente..." 
-                                  className="input-guambra h-14 text-lg font-mono font-bold tracking-widest"
-                                  value={busquedaDoc}
-                                  onChange={e => setBusquedaDoc(e.target.value)}
-                                  onKeyDown={e => e.key === 'Enter' && buscarCliente()}
-                               />
-                           </div>
-                           <button onClick={buscarCliente} className="btn-guambra-secondary !px-8 h-14 flex items-center gap-2">
-                             Buscar
+                        <h2 className="text-2xl font-black uppercase tracking-tighter text-[var(--text-primary)] mb-2">Datos del Cliente</h2>
+                        <p className="text-xs text-[var(--text-muted)] font-medium mb-6">Ingresa la cédula o RUC para auto-completar datos del cliente, o registra uno nuevo.</p>
+
+                        {/* Buscador de cliente */}
+                        <div className="flex gap-3 mb-6">
+                           <input
+                              type="text"
+                              placeholder="Cédula o RUC del cliente..."
+                              className="input-guambra flex-1 h-14 text-lg font-mono font-bold tracking-widest"
+                              value={busquedaDoc}
+                              onChange={e => setBusquedaDoc(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && buscarCliente()}
+                           />
+                           <button onClick={buscarCliente} className="btn-guambra-secondary !px-8 h-14 flex items-center gap-2 shrink-0">
+                             <Search className="w-4 h-4"/> Buscar
                            </button>
                         </div>
 
-                        {/* Tipo de Cliente Selector */}
-                        <div className="flex gap-2 p-1 bg-[var(--bg-surface-2)] rounded-xl mb-6 w-fit border border-[var(--border-soft)]">
-                            <button onClick={() => setClientType('natural')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${clientType === 'natural' ? 'bg-[var(--bg-surface-3)] text-[var(--text-primary)] border border-[var(--border-soft)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}><User className="w-4 h-4"/> Persona Natural</button>
-                            <button onClick={() => setClientType('empresa')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${clientType === 'empresa' ? 'bg-[var(--bg-surface-3)] text-[var(--text-primary)] border border-[var(--border-soft)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}><Building2 className="w-4 h-4"/> Empresa</button>
+                        {/* Banner: cliente encontrado */}
+                        {isClientReadOnly && (
+                           <div className="flex items-center gap-3 p-3 rounded-2xl mb-5 border" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, var(--bg-surface))', borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
+                              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 15%, transparent)' }}>
+                                 <CheckCircle2 className="w-4 h-4 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-primary">Cliente encontrado en el sistema</p>
+                                 <p className="text-xs text-[var(--text-secondary)] font-medium truncate">{cliente.nombres || cliente.razon_social} · <span className="font-mono">{cliente.identificacion}</span></p>
+                              </div>
+                              <button
+                                 onClick={() => setIsClientReadOnly(false)}
+                                 className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border transition-all shrink-0"
+                                 style={{ color: 'var(--color-warning)', backgroundColor: 'var(--color-warning-subtle)', borderColor: 'var(--color-warning-border)' }}
+                                 title="Desbloquear campos para editar manualmente"
+                              >
+                                 <Pencil className="w-3 h-3"/> Editar datos
+                              </button>
+                           </div>
+                        )}
+
+                        {/* Selector tipo de cliente */}
+                        <div className="flex gap-2 p-1 bg-[var(--bg-surface-2)] rounded-xl mb-5 w-fit border border-[var(--border-soft)]">
+                            <button disabled={isClientReadOnly} onClick={() => setClientType('natural')} className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 disabled:pointer-events-none ${clientType === 'natural' ? 'bg-[var(--bg-surface-3)] text-[var(--text-primary)] border border-[var(--border-soft)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}><User className="w-4 h-4"/> Persona Natural</button>
+                            <button disabled={isClientReadOnly} onClick={() => setClientType('empresa')} className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 disabled:pointer-events-none ${clientType === 'empresa' ? 'bg-[var(--bg-surface-3)] text-[var(--text-primary)] border border-[var(--border-soft)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}><Building2 className="w-4 h-4"/> Empresa</button>
                         </div>
 
-                        {/* Formulario */}
-                        <div className="space-y-6 flex-1">
-                            {isClientReadOnly && (
-                                <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl flex justify-between items-center mb-6">
-                                   <div className="flex items-center gap-3">
-                                      <CheckCircle2 className="text-primary w-5 h-5"/>
-                                      <span className="text-xs text-primary font-bold tracking-wide">Cliente encontrado y auto-completado.</span>
-                                   </div>
-                                   <button onClick={() => setIsClientReadOnly(false)} className="text-[10px] uppercase font-black tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-4 py-2 bg-[var(--bg-surface-3)] rounded-lg">Editar Datos</button>
-                                </div>
-                            )}
+                        {/* ── SECCIÓN: DATOS DEL CLIENTE (bloqueables) ── */}
+                        <fieldset disabled={isClientReadOnly} className="contents">
+                           {clientType === 'natural' ? (
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                  <div>
+                                    <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Cédula / Pasaporte <span className="text-red-400">*</span></label>
+                                    <input type="text" className="input-guambra" value={cliente.identificacion} onChange={e => setCliente({...cliente, identificacion: e.target.value})} />
+                                    {(() => { const r = validarIdentificacion(cliente.identificacion); return r.valido !== null ? <p className={`text-[9px] font-bold mt-1 ${r.valido ? 'text-green-400' : 'text-red-400'}`}>{r.valido ? '✓' : '✗'} {r.mensaje}</p> : null; })()}
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Nombres Completos <span className="text-red-400">*</span></label>
+                                    <input type="text" className="input-guambra" value={cliente.nombres} onChange={e => setCliente({...cliente, nombres: e.target.value})} placeholder="Ej: Juan Pérez" />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Email</label>
+                                    <input type="email" className="input-guambra" value={cliente.email} onChange={e => setCliente({...cliente, email: e.target.value})} />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">WhatsApp <span className="text-red-400">*</span></label>
+                                    <input type="tel" className="input-guambra" value={cliente.telefono} onChange={e => setCliente({...cliente, telefono: e.target.value})} />
+                                  </div>
 
-                            {clientType === 'natural' ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Cédula / Pasaporte <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.identificacion} onChange={e => setCliente({...cliente, identificacion: e.target.value})} />
-                                   </div>
-                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Nombres Completos <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.nombres} onChange={e => setCliente({...cliente, nombres: e.target.value})} placeholder="Ej: Juan Perez" />
-                                   </div>
-                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Email <span className="text-red-400">*</span></label>
-                                     <input type="email" className="input-guambra" readOnly={isClientReadOnly} value={cliente.email} onChange={e => setCliente({...cliente, email: e.target.value})} />
-                                   </div>
-                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">WhatsApp <span className="text-red-400">*</span></label>
-                                     <input type="tel" className="input-guambra" readOnly={isClientReadOnly} value={cliente.telefono} onChange={e => setCliente({...cliente, telefono: e.target.value})} />
-                                   </div>
-                                   
-                                   <div className="md:col-span-2 grid grid-cols-3 gap-6 pt-4 border-t border-[var(--border-soft)]">
-                                      <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">País <span className="text-red-400">*</span></label>
-                                        <select className="input-guambra" readOnly={isClientReadOnly} value={cliente.pais} onChange={e => setCliente({...cliente, pais: e.target.value})}>
-                                            <option>Ecuador</option>
-                                        </select>
-                                      </div>
-                                      <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Provincia <span className="text-red-400">*</span></label>
-                                        <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.provincia} onChange={e => setCliente({...cliente, provincia: e.target.value})} />
-                                      </div>
-                                      <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Ciudad <span className="text-red-400">*</span></label>
-                                        <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.ciudad} onChange={e => setCliente({...cliente, ciudad: e.target.value})} />
-                                      </div>
-                                   </div>
+                                  <div className="md:col-span-2 grid grid-cols-3 gap-5 pt-4 border-t border-[var(--border-soft)]">
+                                     <div>
+                                       <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">País</label>
+                                       <select className="input-guambra" value={cliente.pais} onChange={e => setCliente({...cliente, pais: e.target.value})}>
+                                           <option>Ecuador</option>
+                                       </select>
+                                     </div>
+                                     <div>
+                                       <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Provincia</label>
+                                       <input type="text" className="input-guambra" value={cliente.provincia} onChange={e => setCliente({...cliente, provincia: e.target.value})} />
+                                     </div>
+                                     <div>
+                                       <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Ciudad</label>
+                                       <input type="text" className="input-guambra" value={cliente.ciudad} onChange={e => setCliente({...cliente, ciudad: e.target.value})} />
+                                     </div>
+                                  </div>
 
-                                   <div className="md:col-span-2">
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Dirección de Domicilio <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.direccion} onChange={e => setCliente({...cliente, direccion: e.target.value})} />
-                                   </div>
-                                   <div className="md:col-span-2">
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Dirección del Evento <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.direccion_evento} onChange={e => setCliente({...cliente, direccion_evento: e.target.value})} />
-                                   </div>
+                                  <div className="md:col-span-2">
+                                    <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Dirección de Domicilio</label>
+                                    <input type="text" className="input-guambra" value={cliente.direccion} onChange={e => setCliente({...cliente, direccion: e.target.value})} />
+                                  </div>
 
-                                   <div className="pt-4 border-t border-[var(--border-soft)] md:col-span-2 grid grid-cols-2 gap-6">
+                                  <div className="pt-4 border-t border-[var(--border-soft)] md:col-span-2">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3">Contactos de Referencia</p>
+                                    <div className="grid grid-cols-2 gap-5">
                                       <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Ref. Nombre Alterno</label>
-                                        <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.referencia_nombre} onChange={e => setCliente({...cliente, referencia_nombre: e.target.value})} />
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 1 — Nombre</label>
+                                        <input type="text" className="input-guambra" value={cliente.referencia_nombre} onChange={e => setCliente({...cliente, referencia_nombre: e.target.value})} />
                                       </div>
                                       <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Ref. Celular Alterno</label>
-                                        <input type="text" className="input-guambra" readOnly={isClientReadOnly} value={cliente.referencia_celular} onChange={e => setCliente({...cliente, referencia_celular: e.target.value})} />
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 1 — Celular</label>
+                                        <input type="tel" className="input-guambra" value={cliente.referencia_celular} onChange={e => setCliente({...cliente, referencia_celular: e.target.value})} />
                                       </div>
-                                   </div>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">RUC <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" value={cliente.identificacion} onChange={e => setCliente({...cliente, identificacion: e.target.value})} />
-                                   </div>
-                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Nombre de la Empresa <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" value={cliente.razon_social} onChange={e => setCliente({...cliente, razon_social: e.target.value})} />
-                                   </div>
-                                   <div className="md:col-span-2">
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Tipo de Empresa <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" value={cliente.tipo_empresa} onChange={e => setCliente({...cliente, tipo_empresa: e.target.value})} />
-                                   </div>
-                                   <div className="md:col-span-2 grid grid-cols-3 gap-6 pt-4 border-t border-[var(--border-soft)]">
                                       <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">País <span className="text-red-400">*</span></label>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 2 — Nombre</label>
+                                        <input type="text" className="input-guambra" value={cliente.referencia_nombre_2} onChange={e => setCliente({...cliente, referencia_nombre_2: e.target.value})} />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 2 — Celular</label>
+                                        <input type="tel" className="input-guambra" value={cliente.referencia_celular_2} onChange={e => setCliente({...cliente, referencia_celular_2: e.target.value})} />
+                                      </div>
+                                    </div>
+                                  </div>
+                               </div>
+                           ) : (
+                               <div className="space-y-5 mb-5">
+
+                                  {/* ── Identificación y nombre ── */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                      <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Nombre de la Empresa <span className="text-red-400">*</span></label>
+                                      <input type="text" className="input-guambra" value={cliente.razon_social} onChange={e => setCliente({...cliente, razon_social: e.target.value})} placeholder="Ej: Corporación XYZ S.A." />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">RUC de la Empresa</label>
+                                      <input type="text" className="input-guambra font-mono" maxLength={13} value={cliente.ruc_empresa} onChange={e => setCliente({...cliente, ruc_empresa: e.target.value})} placeholder="Ej: 0690012345001" />
+                                      {(() => { const r = validarRUC(cliente.ruc_empresa); return r.valido !== null ? <p className={`text-[9px] font-bold mt-1 ${r.valido ? 'text-green-400' : 'text-red-400'}`}>{r.valido ? '✓' : '✗'} {r.mensaje}</p> : <p className="text-[9px] text-[var(--text-muted)] mt-1">13 dígitos — número tributario de la empresa</p>; })()}
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Tipo / Actividad Económica</label>
+                                      <input type="text" className="input-guambra" value={cliente.tipo_empresa} onChange={e => setCliente({...cliente, tipo_empresa: e.target.value})} placeholder="Ej: Comercial, Servicios, ONG..." />
+                                    </div>
+                                  </div>
+
+                                  {/* ── Contacto de la empresa ── */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-[var(--border-soft)]">
+                                    <p className="md:col-span-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-1.5">
+                                      <Hash className="w-3 h-3"/>Contacto de la Empresa
+                                    </p>
+                                    <div>
+                                      <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Email</label>
+                                      <input type="email" className="input-guambra" value={cliente.email} onChange={e => setCliente({...cliente, email: e.target.value})} placeholder="empresa@correo.com" />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">WhatsApp / Teléfono</label>
+                                      <input type="tel" className="input-guambra" value={cliente.telefono} onChange={e => setCliente({...cliente, telefono: e.target.value})} placeholder="+593 99 999 9999" />
+                                    </div>
+                                  </div>
+
+                                  {/* ── Ubicación ── */}
+                                  <div className="pt-4 border-t border-[var(--border-soft)]">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3 flex items-center gap-1.5">
+                                      <MapPin className="w-3 h-3"/>Ubicación
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-5 mb-5">
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">País</label>
                                         <select className="input-guambra" value={cliente.pais} onChange={e => setCliente({...cliente, pais: e.target.value})}>
-                                            <option>Ecuador</option>
+                                          <option>Ecuador</option>
                                         </select>
                                       </div>
                                       <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Provincia <span className="text-red-400">*</span></label>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Provincia</label>
                                         <input type="text" className="input-guambra" value={cliente.provincia} onChange={e => setCliente({...cliente, provincia: e.target.value})} />
                                       </div>
                                       <div>
-                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Ciudad <span className="text-red-400">*</span></label>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Ciudad</label>
                                         <input type="text" className="input-guambra" value={cliente.ciudad} onChange={e => setCliente({...cliente, ciudad: e.target.value})} />
                                       </div>
-                                   </div>
-                                   <div className="md:col-span-2">
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Dirección de Domicilio <span className="text-red-400">*</span></label>
-                                     <input type="text" className="input-guambra" value={cliente.direccion} onChange={e => setCliente({...cliente, direccion: e.target.value})} />
-                                   </div>
-                                   <div className="md:col-span-2 pt-4 border-t border-[var(--border-soft)] grid grid-cols-1 md:grid-cols-2 gap-6">
-                                     <div className="md:col-span-2">
-                                       <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Nombre del Responsable <span className="text-red-400">*</span></label>
-                                       <input type="text" className="input-guambra" value={cliente.responsable_nombre} onChange={e => setCliente({...cliente, responsable_nombre: e.target.value})} />
-                                     </div>
-                                     <div>
-                                       <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Celular del Responsable <span className="text-red-400">*</span></label>
-                                       <input type="tel" className="input-guambra" value={cliente.responsable_celular} onChange={e => setCliente({...cliente, responsable_celular: e.target.value})} />
-                                     </div>
-                                     <div>
-                                       <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Email del Responsable <span className="text-red-400">*</span></label>
-                                       <input type="email" className="input-guambra" value={cliente.responsable_email} onChange={e => setCliente({...cliente, responsable_email: e.target.value})} />
-                                     </div>
-                                   </div>
-                                </div>
-                            )}
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Dirección</label>
+                                      <input type="text" className="input-guambra" value={cliente.direccion} onChange={e => setCliente({...cliente, direccion: e.target.value})} placeholder="Av. Principal y calle secundaria, local/oficina" />
+                                    </div>
+                                  </div>
+
+                                  {/* ── Responsable de contacto ── */}
+                                  <div className="pt-4 border-t border-[var(--border-soft)]">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3 flex items-center gap-1.5">
+                                      <User className="w-3 h-3"/>Responsable de Contacto <span className="text-red-400">*</span>
+                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">
+                                          Cédula del Responsable <span className="text-red-400">*</span>
+                                        </label>
+                                        <input type="text" className="input-guambra font-mono" maxLength={10} value={cliente.identificacion} onChange={e => setCliente({...cliente, identificacion: e.target.value})} placeholder="Ej: 0601234567" />
+                                        {(() => { const r = validarCedula(cliente.identificacion); return r.valido !== null ? <p className={`text-[9px] font-bold mt-1 ${r.valido ? 'text-green-400' : 'text-red-400'}`}>{r.valido ? '✓' : '✗'} {r.mensaje}</p> : <p className="text-[9px] text-[var(--text-muted)] mt-1">Cédula de quien firma el contrato</p>; })()}
+                                      </div>
+                                      <div className="md:col-span-2">
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Nombre completo del responsable <span className="text-red-400">*</span></label>
+                                        <input type="text" className="input-guambra" value={cliente.responsable_nombre} onChange={e => setCliente({...cliente, responsable_nombre: e.target.value})} placeholder="Ej: Ana Martínez" />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Celular del responsable</label>
+                                        <input type="tel" className="input-guambra" value={cliente.responsable_celular} onChange={e => setCliente({...cliente, responsable_celular: e.target.value})} placeholder="+593 99 000 0000" />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Email del responsable</label>
+                                        <input type="email" className="input-guambra" value={cliente.responsable_email} onChange={e => setCliente({...cliente, responsable_email: e.target.value})} placeholder="responsable@empresa.com" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* ── Contactos de referencia ── */}
+                                  <div className="pt-4 border-t border-[var(--border-soft)]">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3">Contactos de Referencia</p>
+                                    <div className="grid grid-cols-2 gap-5">
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 1 — Nombre</label>
+                                        <input type="text" className="input-guambra" value={cliente.referencia_nombre} onChange={e => setCliente({...cliente, referencia_nombre: e.target.value})} />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 1 — Celular</label>
+                                        <input type="tel" className="input-guambra" value={cliente.referencia_celular} onChange={e => setCliente({...cliente, referencia_celular: e.target.value})} />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 2 — Nombre</label>
+                                        <input type="text" className="input-guambra" value={cliente.referencia_nombre_2} onChange={e => setCliente({...cliente, referencia_nombre_2: e.target.value})} />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Referencia 2 — Celular</label>
+                                        <input type="tel" className="input-guambra" value={cliente.referencia_celular_2} onChange={e => setCliente({...cliente, referencia_celular_2: e.target.value})} />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                               </div>
+                           )}
+                        </fieldset>
+
+                        {/* ── SECCIÓN: DATOS DEL CONTRATO — siempre editable ── */}
+                        <div className="pt-5 border-t-2 border-dashed border-[var(--border-soft)]">
+                           <div className="flex items-center gap-2 mb-4">
+                              <MapPin className="w-4 h-4 text-primary shrink-0"/>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-primary">Datos del Evento (exclusivos de este contrato)</p>
+                           </div>
+                           <div>
+                              <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">
+                                 Dirección del Evento
+                                 <span className="ml-2 normal-case font-normal text-[var(--text-muted)]">— dónde se realizará el evento</span>
+                              </label>
+                              <input
+                                 type="text"
+                                 className="input-guambra"
+                                 placeholder="Ej: Salón El Rosal, Av. 10 de Agosto N35-76, Quito"
+                                 value={direccionEvento}
+                                 onChange={e => setDireccionEvento(e.target.value)}
+                              />
+                           </div>
                         </div>
+
                      </div>
                  )}
 
@@ -885,11 +1123,11 @@ export default function NuevoContrato({ onVolver }) {
                         <h2 className="text-2xl font-black uppercase tracking-tighter text-[var(--text-primary)] mb-2">Selección de Productos y Tallas</h2>
                         <p className="text-xs text-[var(--text-muted)] font-medium mb-6">Agrega los trajes, define la cantidad total y distribuye tallas por pieza.</p>
                         
-                         <div className="relative z-20 mb-8">
+                         <div ref={searchRef} className="relative z-20 mb-8">
                             <div className="relative">
-                               <input 
-                                  type="text" 
-                                  className="input-guambra h-14" 
+                               <input
+                                  type="text"
+                                  className="input-guambra h-14"
                                   placeholder="Buscar producto por nombre o modelo..."
                                   value={busquedaProd}
                                   onChange={(e) => realizarBusquedaProd(e.target.value)}
@@ -952,137 +1190,328 @@ export default function NuevoContrato({ onVolver }) {
                                        : 'bg-[var(--bg-surface-2)] border-[var(--border-soft)]'
                                    }`}>
                                      {/* Cabecera del producto */}
-                                     <div className="p-4 bg-[var(--bg-surface-3)] flex justify-between items-center">
-                                       <div>
-                                         <h3 className="text-base font-black tracking-tight text-[var(--text-primary)]">{prod.nombre}</h3>
-                                         <div className="flex items-center gap-3 mt-0.5">
+                                     <div className="p-4 bg-[var(--bg-surface-3)] flex justify-between items-start gap-3">
+                                       <div className="flex-1 min-w-0">
+                                         <h3 className="text-base font-black tracking-tight text-[var(--text-primary)] truncate">{prod.nombre}</h3>
+                                         <div className="flex items-center flex-wrap gap-2 mt-0.5">
                                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">${prod.precio_unitario} c/u</span>
                                            {prod.fase === 'confirmado' && (
                                              <span className="text-[10px] font-black text-green-400 uppercase tracking-widest flex items-center gap-1">
-                                               <CheckCircle2 className="w-3 h-3"/> {prod.cantidad_total} unidades · ${(prod.precio_unitario * prod.cantidad_total).toFixed(2)}
+                                               <CheckCircle2 className="w-3 h-3"/> {prod.cantidad_total} unid. · ${(prod.precio_unitario * prod.cantidad_total).toFixed(2)}
                                              </span>
+                                           )}
+                                           {prod.fase === 'cantidad' && prod._yaConfirmado && (
+                                             <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md" style={{ color: 'var(--color-warning)', backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>Editando</span>
                                            )}
                                          </div>
                                        </div>
-                                       <div className="flex items-center gap-2">
+                                       <div className="flex items-center gap-1.5 shrink-0">
                                          {prod.fase === 'confirmado' && (
-                                           <button onClick={() => editarTallas(prod.id)} className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-primary transition-colors px-3 py-1.5 bg-[var(--bg-surface-3)] rounded-lg">Editar tallas</button>
+                                           <>
+                                             <button
+                                               onClick={() => editarCantidad(prod.id)}
+                                               title="Cambiar cantidad total"
+                                               className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-amber-400 hover:bg-amber-500/10 transition-colors px-2.5 py-1.5 bg-[var(--bg-surface-2)] rounded-lg border border-[var(--border-soft)]"
+                                             >
+                                               <Hash className="w-3 h-3"/> Cantidad
+                                             </button>
+                                             {prod.piezas.length > 0 && (
+                                               <button
+                                                 onClick={() => editarTallas(prod.id)}
+                                                 title="Ajustar distribución de tallas"
+                                                 className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-primary hover:bg-primary/10 transition-colors px-2.5 py-1.5 bg-[var(--bg-surface-2)] rounded-lg border border-[var(--border-soft)]"
+                                               >
+                                                 <SlidersHorizontal className="w-3 h-3"/> Tallas
+                                               </button>
+                                             )}
+                                           </>
                                          )}
-                                         <button onClick={() => quitarProducto(prod.id)} className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all">
-                                           <Trash2 className="w-4 h-4" />
+                                         <button
+                                           onClick={() => quitarProducto(prod.id)}
+                                           title="Quitar producto"
+                                           className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all border border-red-500/20"
+                                         >
+                                           <Trash2 className="w-3.5 h-3.5" />
                                          </button>
                                        </div>
                                      </div>
 
                                      {/* FASE A: Cantidad total */}
-                                     {prod.fase === 'cantidad' && (
-                                       <div className="p-5 space-y-4">
-                                         <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Paso A — ¿Cuántos trajes/unidades de este producto va a llevar el cliente?</p>
-                                         <div className="flex items-center gap-4">
-                                           <div className="relative">
-                                             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                                     {prod.fase === 'cantidad' && (() => {
+                                       const esEdicion = prod._yaConfirmado;
+                                       const cantPrev = prod._cantidadAnterior;
+                                       return (
+                                         <div className="p-5 space-y-4">
+                                           {/* Instrucción contextual */}
+                                           {esEdicion ? (
+                                             <div className="flex items-start gap-3 p-3 rounded-xl" style={{ backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>
+                                               <Pencil className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--color-warning)' }}/>
+                                               <div>
+                                                 <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--color-warning)' }}>Editando cantidad</p>
+                                                 <p className="text-[9px] text-[var(--text-muted)] mt-0.5">Cantidad anterior: <strong style={{ color: 'var(--color-warning)' }}>{cantPrev}</strong> unidad{cantPrev !== 1 ? 'es' : ''}. Al confirmar, podrás ajustar las tallas con los valores ya ingresados.</p>
+                                               </div>
+                                             </div>
+                                           ) : (
+                                             <div className="flex items-start gap-3 p-3 bg-[var(--bg-surface-3)] border border-[var(--border-soft)] rounded-xl">
+                                               <Hash className="w-4 h-4 text-primary shrink-0 mt-0.5"/>
+                                               <p className="text-[10px] font-bold text-[var(--text-secondary)]">¿Cuántas unidades de <strong className="text-[var(--text-primary)]">{prod.nombre}</strong> va a llevar el cliente? Luego distribuirás las tallas por pieza.</p>
+                                             </div>
+                                           )}
+
+                                           {/* Control de cantidad con +/- */}
+                                           <div className="flex items-center gap-3">
+                                             <button
+                                               onClick={() => setProductosCarrito(prev => prev.map(p =>
+                                                 p.id === prod.id ? { ...p, cantidad_total: Math.max(1, (p.cantidad_total || 1) - 1) } : p
+                                               ))}
+                                               className="w-12 h-12 rounded-xl bg-[var(--bg-surface-3)] border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] transition-all flex items-center justify-center font-black text-lg"
+                                             >
+                                               <Minus className="w-4 h-4"/>
+                                             </button>
                                              <input
                                                type="number" min="1"
-                                               className="input-guambra pl-10 w-40 text-center text-xl font-black"
+                                               className="input-guambra w-24 text-center text-2xl font-black"
                                                value={prod.cantidad_total}
                                                onChange={e => setProductosCarrito(prev => prev.map(p =>
                                                  p.id === prod.id ? { ...p, cantidad_total: Math.max(1, parseInt(e.target.value, 10) || 1) } : p
                                                ))}
                                              />
+                                             <button
+                                               onClick={() => setProductosCarrito(prev => prev.map(p =>
+                                                 p.id === prod.id ? { ...p, cantidad_total: (p.cantidad_total || 1) + 1 } : p
+                                               ))}
+                                               className="w-12 h-12 rounded-xl bg-[var(--bg-surface-3)] border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] transition-all flex items-center justify-center"
+                                             >
+                                               <Plus className="w-4 h-4"/>
+                                             </button>
+                                             <div className="h-px flex-1 bg-[var(--border-soft)]"/>
+                                             <button
+                                               onClick={() => confirmarCantidadTotal(prod.id)}
+                                               className="btn-guambra-primary h-12 !px-6 flex items-center gap-2"
+                                             >
+                                               <CheckCircle2 className="w-4 h-4"/>
+                                               {esEdicion ? 'Actualizar' : 'Confirmar'}
+                                             </button>
                                            </div>
-                                           <button
-                                             onClick={() => confirmarCantidadTotal(prod.id)}
-                                             className="btn-guambra-primary !px-6 h-12 flex items-center gap-2"
-                                           >
-                                             <CheckCircle2 className="w-4 h-4"/> Confirmar cantidad
-                                           </button>
-                                         </div>
-                                       </div>
-                                     )}
 
-                                     {/* FASE B: Distribución de tallas */}
-                                     {prod.fase === 'tallas' && (
-                                       <div className="p-5 space-y-4">
-                                         <div className="flex items-center justify-between">
-                                           <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                             Paso B — Distribuye {prod.cantidad_total} unidad{prod.cantidad_total > 1 ? 'es' : ''} entre las tallas de cada pieza
+                                           {/* Subtotal en tiempo real */}
+                                           <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+                                             Subtotal estimado: <span className="text-primary">${(prod.precio_unitario * (prod.cantidad_total || 1)).toFixed(2)}</span>
                                            </p>
                                          </div>
-                                         {prod.piezas.length === 0 ? (
-                                           <div className="py-4 text-center text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">
-                                             Este producto no tiene piezas vinculadas
+                                       );
+                                     })()}
+
+                                     {/* FASE B: Distribución de tallas */}
+                                     {prod.fase === 'tallas' && (() => {
+                                       const todasOk = piezasValidas(prod);
+                                       const hayExceso = hayExcesoStock(prod);
+                                       const puedeConfirmar = todasOk && !hayExceso && !prod._stockVerificando;
+                                       return (
+                                         <div className="p-5 space-y-4">
+                                           {/* Encabezado instructivo + estado de verificación */}
+                                           <div className="flex items-start gap-3 p-3 bg-[var(--bg-surface-3)] border border-[var(--border-soft)] rounded-xl">
+                                             <SlidersHorizontal className="w-4 h-4 text-primary shrink-0 mt-0.5"/>
+                                             <div className="flex-1">
+                                               <div className="flex items-center justify-between">
+                                                 <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                                                   Distribución de tallas — {prod.cantidad_total} unidad{prod.cantidad_total > 1 ? 'es' : ''}
+                                                 </p>
+                                                 {prod._stockVerificando && (
+                                                   <span className="text-[9px] text-[var(--text-muted)] flex items-center gap-1">
+                                                     <Loader2 className="w-3 h-3 animate-spin"/> Verificando disponibilidad...
+                                                   </span>
+                                                 )}
+                                                 {!prod._stockVerificando && !fechaSalidaFull && (
+                                                   <span className="text-[9px] text-amber-400 font-bold flex items-center gap-1">
+                                                     <AlertTriangle className="w-3 h-3"/> Sin fechas — mostrando stock total
+                                                   </span>
+                                                 )}
+                                               </div>
+                                               <p className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                                                 Indica cuántas unidades van en cada talla por pieza. La suma debe ser exactamente <strong className="text-primary">{prod.cantidad_total}</strong> en cada pieza.
+                                               </p>
+                                             </div>
                                            </div>
-                                         ) : (
-                                           <div className="space-y-4">
-                                             {prod.piezas.map(pieza => {
-                                               const asignado = totalAsignadoPieza(pieza);
-                                               const ok = asignado === prod.cantidad_total;
-                                               const excede = asignado > prod.cantidad_total;
-                                               return (
-                                                 <div key={pieza.id} className="bg-[var(--bg-surface-2)] rounded-xl p-4 border border-[var(--border-soft)]">
-                                                   <div className="flex justify-between items-center mb-3">
-                                                     <span className="text-xs font-black text-[var(--text-primary)] uppercase tracking-wide">{pieza.nombre}</span>
-                                                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md flex items-center gap-1 ${
-                                                       ok ? 'text-green-400 bg-green-500/10' :
-                                                       excede ? 'text-red-400 bg-red-500/10' :
-                                                       'text-amber-400 bg-amber-500/10'
-                                                     }`}>
-                                                       {ok ? <CheckCircle2 className="w-3 h-3"/> : excede ? <XCircle className="w-3 h-3"/> : <AlertTriangle className="w-3 h-3"/>}
-                                                       {asignado} / {prod.cantidad_total}
-                                                     </span>
-                                                   </div>
-                                                   {pieza.tallasDisponibles.length === 0 ? (
-                                                     <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">Sin tallas registradas en stock</p>
-                                                   ) : (
-                                                     <div className="grid gap-2">
-                                                       {pieza.tallasDisponibles.map(tallaInfo => {
-                                                         const cantActual = pieza.tallasCantidades[tallaInfo.talla] ?? 0;
-                                                         const stockOk = cantActual <= tallaInfo.stock;
-                                                         return (
-                                                           <div key={tallaInfo.talla} className="flex items-center gap-3">
-                                                             <span className={`text-[10px] font-black w-12 text-center py-1 rounded-md ${
-                                                               tallaInfo.stock === 0 ? 'text-[var(--text-muted)] bg-[var(--bg-surface-2)]' : 'text-[var(--text-primary)] bg-[var(--bg-surface-3)]'
-                                                             }`}>{tallaInfo.talla}</span>
-                                                             <span className="text-[10px] text-[var(--text-muted)] w-20">Stock: {tallaInfo.stock}</span>
-                                                             <input
-                                                               type="number" min="0" max={tallaInfo.stock}
-                                                               disabled={tallaInfo.stock === 0}
-                                                               className={`w-20 px-3 py-1.5 rounded-lg text-center text-xs font-black border transition-colors ${
-                                                                 !stockOk
-                                                                   ? 'bg-red-500/10 border-red-500/40 text-red-400'
-                                                                   : cantActual > 0
-                                                                   ? 'bg-primary/10 border-primary/40 text-[var(--text-primary)]'
-                                                                   : 'bg-[var(--bg-input)] border-[var(--border-soft)] text-[var(--text-primary)]'
-                                                               } disabled:opacity-30 disabled:cursor-not-allowed`}
-                                                               value={cantActual}
-                                                               onChange={e => updateTallaCantidad(prod.id, pieza.id, tallaInfo.talla, e.target.value)}
-                                                             />
-                                                             {!stockOk && cantActual > 0 && (
-                                                               <span className="text-[9px] text-red-400 font-bold">Excede stock</span>
-                                                             )}
-                                                           </div>
-                                                         );
-                                                       })}
+
+                                           {/* Alerta si vienen de editar y los valores no cuadran */}
+                                           {prod._yaConfirmado && !todasOk && (
+                                             <div className="flex items-start gap-3 p-3 rounded-xl animate-in fade-in duration-200" style={{ backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>
+                                               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--color-warning)' }}/>
+                                               <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-warning)' }}>
+                                                 La cantidad cambió. Ajusta las tallas para que sumen <strong>{prod.cantidad_total}</strong> en cada pieza.
+                                               </p>
+                                             </div>
+                                           )}
+
+                                           {/* Alerta de exceso de stock disponible */}
+                                           {hayExceso && !prod._stockVerificando && (
+                                             <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/5 border border-red-500/25">
+                                               <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5"/>
+                                               <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest">
+                                                 Hay tallas que superan el stock disponible para las fechas seleccionadas. Reduce las cantidades indicadas en rojo.
+                                               </p>
+                                             </div>
+                                           )}
+
+                                           {prod.piezas.length === 0 ? (
+                                             <div className="py-4 text-center text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">
+                                               Este producto no tiene piezas vinculadas
+                                             </div>
+                                           ) : (
+                                             <div className="space-y-4">
+                                               {prod.piezas.map(pieza => {
+                                                 const asignado = totalAsignadoPieza(pieza);
+                                                 const ok = asignado === prod.cantidad_total;
+                                                 const excede = asignado > prod.cantidad_total;
+                                                 const falta = prod.cantidad_total - asignado;
+                                                 return (
+                                                   <div key={pieza.id} className={`rounded-xl p-4 border transition-colors ${
+                                                     ok && !pieza.tallasDisponibles.some(t => { const c = pieza.tallasCantidades[t.talla] ?? 0; return c > (t.stockDisponible ?? t.stock) && c > 0; })
+                                                       ? 'bg-green-500/5 border-green-500/20' :
+                                                     excede ? 'bg-red-500/5 border-red-500/20' :
+                                                     'bg-[var(--bg-surface-2)] border-[var(--border-soft)]'
+                                                   }`}>
+                                                     {/* Encabezado pieza + contador */}
+                                                     <div className="flex justify-between items-center mb-3">
+                                                       <span className="text-xs font-black text-[var(--text-primary)] uppercase tracking-wide">{pieza.nombre}</span>
+                                                       <div className="flex items-center gap-2">
+                                                         {!ok && !excede && (
+                                                           <span className="text-[9px] font-bold" style={{ color: 'var(--color-warning)' }}>Faltan {falta}</span>
+                                                         )}
+                                                         <span
+                                                           className="text-[10px] font-black px-2 py-1 rounded-md flex items-center gap-1"
+                                                           style={ok
+                                                             ? { color: '#4ade80', backgroundColor: 'rgba(74,222,128,0.12)' }
+                                                             : excede
+                                                             ? { color: '#f87171', backgroundColor: 'rgba(248,113,113,0.12)' }
+                                                             : { color: 'var(--color-warning)', backgroundColor: 'var(--color-warning-subtle)' }
+                                                           }
+                                                         >
+                                                           {ok ? <CheckCircle2 className="w-3 h-3"/> : excede ? <XCircle className="w-3 h-3"/> : <AlertTriangle className="w-3 h-3"/>}
+                                                           {asignado} / {prod.cantidad_total}
+                                                         </span>
+                                                       </div>
                                                      </div>
-                                                   )}
-                                                 </div>
-                                               );
-                                             })}
-                                           </div>
-                                         )}
-                                         <button
-                                           onClick={() => confirmarTallas(prod.id)}
-                                           disabled={!piezasValidas(prod)}
-                                           className={`w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                             piezasValidas(prod)
-                                               ? 'bg-green-500 text-white hover:bg-green-400 shadow-lg shadow-green-500/20'
-                                               : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] cursor-not-allowed'
-                                           }`}
-                                         >
-                                           <CheckCircle2 className="w-4 h-4"/> Guardar distribución de tallas
-                                         </button>
-                                       </div>
-                                     )}
+
+                                                     {/* Barra de progreso */}
+                                                     <div className="h-1.5 bg-[var(--bg-surface-3)] rounded-full mb-3 overflow-hidden">
+                                                       <div
+                                                         className="h-full rounded-full transition-all"
+                                                         style={{
+                                                           width: `${Math.min(100, (asignado / prod.cantidad_total) * 100)}%`,
+                                                           backgroundColor: ok ? '#4ade80' : excede ? '#f87171' : 'var(--color-warning)'
+                                                         }}
+                                                       />
+                                                     </div>
+
+                                                     {pieza.tallasDisponibles.length === 0 ? (
+                                                       <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">Sin tallas registradas en stock</p>
+                                                     ) : (
+                                                       <div className="grid gap-2">
+                                                         {pieza.tallasDisponibles.map(tallaInfo => {
+                                                           const cantActual = pieza.tallasCantidades[tallaInfo.talla] ?? 0;
+                                                           // Usar stock disponible real (considera reservas por fecha) o total como fallback
+                                                           const stockDisp = tallaInfo.stockDisponible ?? tallaInfo.stock;
+                                                           const sinStock = stockDisp === 0;
+                                                           const stockOk = cantActual <= stockDisp;
+                                                           const verificado = tallaInfo.stockDisponible !== undefined && tallaInfo.stockDisponible !== null;
+                                                           return (
+                                                             <div key={tallaInfo.talla} className={`flex items-center gap-3 px-2 py-1.5 rounded-lg transition-colors ${cantActual > 0 && !sinStock ? 'bg-[var(--bg-surface-3)]' : ''}`}>
+                                                               {/* Badge talla */}
+                                                               <span className={`text-[10px] font-black w-14 text-center py-1 rounded-md border ${
+                                                                 sinStock
+                                                                   ? 'text-[var(--text-muted)] bg-[var(--bg-surface-2)] border-[var(--border-soft)] opacity-50'
+                                                                   : 'text-[var(--text-primary)] bg-[var(--bg-surface-2)] border-[var(--border-soft)]'
+                                                               }`}>{tallaInfo.talla}</span>
+
+                                                               {/* Indicador de stock disponible */}
+                                                               <div className="flex flex-col w-20 shrink-0">
+                                                                 <span className={`text-[9px] font-black leading-tight ${
+                                                                   sinStock ? 'text-red-400' :
+                                                                   stockDisp <= prod.cantidad_total / 2 ? 'text-amber-400' :
+                                                                   'text-[var(--text-muted)]'
+                                                                 }`}>
+                                                                   {sinStock ? 'No disponible' : `Disp: ${stockDisp}`}
+                                                                 </span>
+                                                                 {verificado && tallaInfo.stockDisponible !== tallaInfo.stock && (
+                                                                   <span className="text-[8px] text-[var(--text-muted)] opacity-60 leading-tight">total: {tallaInfo.stock}</span>
+                                                                 )}
+                                                               </div>
+
+                                                               {/* Controles cantidad */}
+                                                               <div className="flex items-center gap-1">
+                                                                 <button
+                                                                   disabled={sinStock || cantActual === 0}
+                                                                   onClick={() => updateTallaCantidad(prod.id, pieza.id, tallaInfo.talla, cantActual - 1)}
+                                                                   className="w-7 h-7 rounded-md bg-[var(--bg-surface-2)] border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-all flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                 >
+                                                                   <Minus className="w-3 h-3"/>
+                                                                 </button>
+                                                                 <input
+                                                                   type="number" min="0" max={stockDisp}
+                                                                   disabled={sinStock}
+                                                                   className={`w-14 px-2 py-1 rounded-lg text-center text-xs font-black border transition-colors ${
+                                                                     !stockOk && cantActual > 0
+                                                                       ? 'bg-red-500/10 border-red-500/40 text-red-400'
+                                                                       : cantActual > 0
+                                                                       ? 'bg-primary/10 border-primary/40 text-[var(--text-primary)]'
+                                                                       : 'bg-[var(--bg-input)] border-[var(--border-soft)] text-[var(--text-primary)]'
+                                                                   } disabled:opacity-30 disabled:cursor-not-allowed`}
+                                                                   value={cantActual}
+                                                                   onChange={e => updateTallaCantidad(prod.id, pieza.id, tallaInfo.talla, e.target.value)}
+                                                                 />
+                                                                 <button
+                                                                   disabled={sinStock || cantActual >= stockDisp}
+                                                                   onClick={() => updateTallaCantidad(prod.id, pieza.id, tallaInfo.talla, cantActual + 1)}
+                                                                   className="w-7 h-7 rounded-md bg-[var(--bg-surface-2)] border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-all flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                 >
+                                                                   <Plus className="w-3 h-3"/>
+                                                                 </button>
+                                                               </div>
+
+                                                               {/* Aviso inline de exceso */}
+                                                               {!stockOk && cantActual > 0 && (
+                                                                 <span className="text-[9px] text-red-400 font-black leading-tight">
+                                                                   Stock insuficiente — disponible: {stockDisp}, solicitado: {cantActual}
+                                                                 </span>
+                                                               )}
+                                                             </div>
+                                                           );
+                                                         })}
+                                                       </div>
+                                                     )}
+                                                   </div>
+                                                 );
+                                               })}
+                                             </div>
+                                           )}
+
+                                           {/* Botón confirmar tallas */}
+                                           <button
+                                             onClick={() => confirmarTallas(prod.id)}
+                                             disabled={!puedeConfirmar}
+                                             className={`w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                                               puedeConfirmar
+                                                 ? 'bg-green-500 text-white hover:bg-green-400 shadow-lg shadow-green-500/20'
+                                                 : 'bg-[var(--bg-surface-2)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-soft)]'
+                                             }`}
+                                           >
+                                             {prod._stockVerificando
+                                               ? <><Loader2 className="w-4 h-4 animate-spin"/> Verificando stock...</>
+                                               : <><CheckCircle2 className="w-4 h-4"/>
+                                                   {puedeConfirmar
+                                                     ? 'Guardar distribución'
+                                                     : hayExceso
+                                                     ? 'Stock insuficiente — ajusta las tallas'
+                                                     : `Distribuye ${prod.cantidad_total} unidad${prod.cantidad_total > 1 ? 'es' : ''} en cada pieza`
+                                                   }
+                                                 </>
+                                             }
+                                           </button>
+                                         </div>
+                                       );
+                                     })()}
 
                                      {/* FASE C: Confirmado — resumen */}
                                      {prod.fase === 'confirmado' && (
@@ -1117,9 +1546,9 @@ export default function NuevoContrato({ onVolver }) {
 
                         {/* Aviso si hay productos sin confirmar */}
                         {productosCarrito.length > 0 && !todosConfirmados && (
-                          <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
-                            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0"/>
-                            <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Confirma todos los productos y sus tallas para continuar al paso siguiente.</p>
+                          <div className="mt-4 p-3 rounded-xl flex items-center gap-3" style={{ backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>
+                            <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--color-warning)' }}/>
+                            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-warning)' }}>Confirma todos los productos y sus tallas para continuar al paso siguiente.</p>
                           </div>
                         )}
                      </div>
@@ -1163,18 +1592,18 @@ export default function NuevoContrato({ onVolver }) {
 
                          {/* ZONA DE FACTURACIÓN MULTI-DÍA — visible cuando días > 1 */}
                          {diasAlquiler > 1 && (
-                            <div className="mb-6 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 animate-in slide-in-from-top-4 duration-300">
+                            <div className="mb-6 rounded-2xl p-6 animate-in slide-in-from-top-4 duration-300" style={{ backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>
                                <div className="flex items-center gap-3 mb-5">
-                                  <Calendar className="w-5 h-5 text-amber-400"/>
-                                  <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-400">Facturación por Días de Alquiler</h3>
-                                  <span className="ml-auto px-3 py-1 bg-amber-500/20 text-amber-400 rounded-lg text-xs font-black">{diasAlquiler} días</span>
+                                  <Calendar className="w-5 h-5" style={{ color: 'var(--color-warning)' }}/>
+                                  <h3 className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--color-warning)' }}>Facturación por Días de Alquiler</h3>
+                                  <span className="ml-auto px-3 py-1 rounded-lg text-xs font-black" style={{ color: 'var(--color-warning)', backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>{diasAlquiler} días</span>
                                </div>
 
                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                   {/* Días de alquiler — solo lectura */}
                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-amber-400/70 mb-2 block">Días de Alquiler</label>
-                                     <div className="input-guambra bg-amber-500/10 border-amber-500/30 text-amber-400 font-mono text-xl font-black flex items-center justify-center cursor-not-allowed">
+                                     <label className="text-[10px] uppercase tracking-widest font-bold mb-2 block" style={{ color: 'var(--color-warning)' }}>Días de Alquiler</label>
+                                     <div className="input-guambra font-mono text-xl font-black flex items-center justify-center cursor-not-allowed" style={{ color: 'var(--color-warning)', backgroundColor: 'var(--color-warning-subtle)', borderColor: 'var(--color-warning-border)' }}>
                                         {diasAlquiler}
                                      </div>
                                      <p className="text-[9px] text-[var(--text-muted)] mt-1 uppercase tracking-widest">Calculado automáticamente</p>
@@ -1182,7 +1611,7 @@ export default function NuevoContrato({ onVolver }) {
 
                                   {/* Precio por día — editable */}
                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Precio por Día <span className="text-amber-400/60 normal-case">(editable)</span></label>
+                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Precio por Día <span className="normal-case" style={{ color: 'var(--color-warning)', opacity: 0.7 }}>(editable)</span></label>
                                      <div className="relative">
                                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-black text-sm pointer-events-none">$</span>
                                         <input
@@ -1215,13 +1644,13 @@ export default function NuevoContrato({ onVolver }) {
 
                                   {/* Subtotal de alquiler — editable */}
                                   <div>
-                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Subtotal Alquiler <span className="text-amber-400/60 normal-case">(editable)</span></label>
+                                     <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block">Subtotal Alquiler <span className="normal-case" style={{ color: 'var(--color-warning)', opacity: 0.7 }}>(editable)</span></label>
                                      <div className="relative">
                                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-black text-sm pointer-events-none">$</span>
                                         <input
                                           type="number" step="0.01" min="0"
-                                          style={{ paddingLeft: '3rem' }}
-                                          className={`input-guambra font-mono text-lg font-black ${subtotalFueModificado ? 'border-amber-500/50 bg-amber-500/5' : ''}`}
+                                          style={{ paddingLeft: '3rem', ...(subtotalFueModificado ? { borderColor: 'var(--color-warning-border)', backgroundColor: 'var(--color-warning-subtle)' } : {}) }}
+                                          className="input-guambra font-mono text-lg font-black"
                                           placeholder={`Auto: $${subtotalAlquilerSugerido.toFixed(2)}`}
                                           value={subtotalAlquiler}
                                           onChange={e => {
@@ -1244,9 +1673,9 @@ export default function NuevoContrato({ onVolver }) {
 
                                {/* Advertencia si el subtotal fue modificado manualmente */}
                                {subtotalFueModificado && (
-                                  <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 animate-in fade-in duration-300">
-                                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0"/>
-                                     <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+                                  <div className="mt-4 p-3 rounded-xl flex items-center gap-3 animate-in fade-in duration-300" style={{ backgroundColor: 'var(--color-warning-subtle)', border: '1px solid var(--color-warning-border)' }}>
+                                     <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--color-warning)' }}/>
+                                     <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-warning)' }}>
                                         El subtotal fue modificado manualmente. Difiere del cálculo automático (${subtotalAlquilerSugerido.toFixed(2)}).
                                      </p>
                                   </div>
@@ -1273,8 +1702,8 @@ export default function NuevoContrato({ onVolver }) {
                               </div>
 
                               <div className="pt-4 border-t border-[var(--border-soft)]">
-                                 <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-1 block">
-                                    Monto del anticipo <span className="text-[var(--text-muted)]">(pre-llenado al 50%)</span>
+                                 <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-1 block flex items-center gap-2">
+                                    Monto del Anticipo <span className="text-red-400">*</span>
                                  </label>
                                  <div className="relative">
                                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-black text-sm pointer-events-none">$</span>
@@ -1282,14 +1711,17 @@ export default function NuevoContrato({ onVolver }) {
                                        type="number" step="0.01" min="0"
                                        style={{ paddingLeft: '3rem' }}
                                        className="input-guambra font-mono text-xl"
-                                      placeholder={`Min. recomendado: $${anticipo.toFixed(2)}`}
-                                      value={montoAnticipo}
-                                      onChange={e => setMontoAnticipo(e.target.value)}
-                                      onFocus={() => { if (!montoAnticipo) setMontoAnticipo(anticipo.toFixed(2)); }}
-                                    />
+                                       placeholder={`Sugerido: $${anticipo.toFixed(2)}`}
+                                       value={montoAnticipo}
+                                       onChange={e => setMontoAnticipo(e.target.value)}
+                                       onFocus={() => { if (!montoAnticipo) setMontoAnticipo(anticipo.toFixed(2)); }}
+                                     />
                                  </div>
                                  <p className="text-[9px] text-[var(--text-muted)] mt-1 font-bold uppercase tracking-widest">
-                                    50% sugerido: <span className="text-primary">${anticipo.toFixed(2)}</span>
+                                    50% del total: <span className="text-primary">${anticipo.toFixed(2)}</span>
+                                    {parseFloat(montoAnticipo) > 0 && Math.abs(parseFloat(montoAnticipo) - anticipo) > 0.01 && (
+                                       <span className="text-amber-400 ml-2">· Monto personalizado</span>
+                                    )}
                                  </p>
                               </div>
 
@@ -1334,13 +1766,32 @@ export default function NuevoContrato({ onVolver }) {
                                  <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">Total a Pagar</span>
                                  <span className="font-mono text-3xl font-black text-[var(--text-primary)]">${total.toFixed(2)}</span>
                               </div>
-                              <div className="bg-primary border border-primary shadow-lg shadow-primary/20 rounded-xl p-4 flex justify-between items-center text-white mt-4">
-                                 <span className="text-xs font-black uppercase tracking-widest flex items-center gap-2">Anticipo Req. (50%)</span>
-                                 <span className="font-mono text-2xl font-black">${anticipo.toFixed(2)}</span>
+
+                              {/* Separador anticipo */}
+                              <div className="border-t border-[var(--border-soft)] pt-4 space-y-3">
+                                 {/* Referencia 50% — discreta */}
+                                 <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Anticipo ref. (50%)</span>
+                                    <span className="font-mono text-xs text-[var(--text-muted)] font-bold">${anticipo.toFixed(2)}</span>
+                                 </div>
+                                 {/* Anticipo ingresado */}
+                                 <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Anticipo ingresado</span>
+                                    <span className="font-mono text-sm font-black text-[var(--text-primary)]">
+                                       ${(parseFloat(montoAnticipo) || 0).toFixed(2)}
+                                    </span>
+                                 </div>
                               </div>
-                              <div className="flex justify-between items-center pt-2">
-                                 <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Saldo al retirar</span>
-                                 <span className="font-mono text-sm text-[var(--text-muted)] font-bold">${(total - anticipo).toFixed(2)}</span>
+
+                              {/* SALDO PENDIENTE — card destacada */}
+                              <div className="rounded-2xl p-4 flex justify-between items-center mt-2" style={{ background: 'color-mix(in srgb, var(--color-primary) 12%, var(--bg-surface))', border: '1px solid color-mix(in srgb, var(--color-primary) 35%, transparent)' }}>
+                                 <div>
+                                    <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--color-primary)' }}>Saldo Pendiente</p>
+                                    <p className="text-[9px] text-[var(--text-muted)] mt-0.5">Al momento de retirar</p>
+                                 </div>
+                                 <span className="font-mono text-2xl font-black" style={{ color: 'var(--color-primary)' }}>
+                                    ${Math.max(0, total - (parseFloat(montoAnticipo) || 0)).toFixed(2)}
+                                 </span>
                               </div>
                            </div>
                         </div>
@@ -1402,20 +1853,24 @@ export default function NuevoContrato({ onVolver }) {
                                 </button>
                             </div>
                         ) : (
-                            <div className="w-full space-y-6 animate-in slide-in-from-bottom-8 duration-500">
-                                <div className="p-6 bg-[var(--bg-surface-2)] border border-[var(--border-soft)] rounded-2xl flex flex-col gap-4">
-                                   <div className="flex flex-col sm:flex-row gap-4">
-                                      <button
-                                        onClick={() => contratoId && toast.info(`Contrato ${contratoCodigo || contratoId.substring(0, 8).toUpperCase()} — Impresión disponible próximamente.`)}
+                            <div className="w-full space-y-4 animate-in slide-in-from-bottom-8 duration-500">
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button
+                                        onClick={() => contratoId && toast.info(`Impresión disponible próximamente.`)}
                                         className="btn-guambra-primary !py-4 h-16 flex-1 text-sm flex items-center justify-center gap-2 group bg-blue-600 hover:bg-blue-500 border-none shadow-blue-500/20 shadow-xl">
-                                         <Printer className="w-5 h-5"/> Imprimir Contrato (PDF)
-                                      </button>
-                                      <button onClick={() => {toast.success('Pago confirmado y notificado por WhatsApp'); setTimeout(() => onVolver?.(), 1500)}} className="btn-guambra-primary !py-4 h-16 flex-1 text-sm flex items-center justify-center gap-2 group">
-                                         <CreditCard className="w-5 h-5"/> Confirmar Anticipo
-                                      </button>
-                                   </div>
-                                   <button className="btn-guambra-secondary bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30 !py-4 w-full text-xs">Rechazar / Cancelar Pedido</button>
+                                        <Printer className="w-5 h-5"/> Imprimir Contrato (PDF)
+                                    </button>
+                                    <button
+                                        onClick={() => onVolver?.()}
+                                        className="btn-guambra-primary !py-4 h-16 flex-1 text-sm flex items-center justify-center gap-2 group">
+                                        <CheckCircle2 className="w-5 h-5"/> Volver a Contratos
+                                    </button>
                                 </div>
+                                <button
+                                    onClick={() => { setStep(1); setContratoGuardado(false); }}
+                                    className="btn-guambra-secondary !py-4 w-full text-xs">
+                                    Crear Otro Contrato
+                                </button>
                             </div>
                         )}
                      </div>

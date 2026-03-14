@@ -1,4 +1,4 @@
-import { CheckCircle, Store, Mail, ArrowRight, MessageCircle, Lock, Globe, ShieldCheck } from 'lucide-react';
+import { CheckCircle, Mail, ArrowRight, MessageCircle, Lock, Globe, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const RegistroExitoso = () => {

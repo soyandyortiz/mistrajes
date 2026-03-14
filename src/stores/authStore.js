@@ -81,5 +81,19 @@ export const useAuthStore = create((set, get) => ({
 
   signOut: async () => {
     await supabase.auth.signOut();
-  }
+  },
+
+  updateAvatar: async (avatarId) => {
+    const { profile } = get();
+    if (!profile) throw new Error('Sin sesión activa');
+
+    const { error } = await supabase
+      .from('perfiles_usuario')
+      .update({ avatar_id: avatarId })
+      .eq('id', profile.id);
+
+    if (error) throw error;
+
+    set({ profile: { ...profile, avatar_id: avatarId } });
+  },
 }));

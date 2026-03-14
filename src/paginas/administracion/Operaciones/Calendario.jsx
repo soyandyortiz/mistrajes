@@ -121,6 +121,9 @@ export default function Calendario() {
     e.preventDefault();
     const monto = parseFloat(montoAbono);
     if (!monto || monto <= 0) return toast.error('Ingresa un monto válido');
+    const saldoActual = Number(contratoActivo.saldo_pendiente || 0);
+    if (saldoActual <= 0) return toast.error('Este contrato no tiene saldo pendiente');
+    if (monto > saldoActual) return toast.error(`El abono ($${monto.toFixed(2)}) no puede superar el saldo pendiente ($${saldoActual.toFixed(2)})`);
     try {
       const { error: pagoError } = await supabase
         .from('pagos_contrato')
@@ -337,13 +340,19 @@ export default function Calendario() {
 
                                {!anulado && (
                                    <div className="pt-4 mt-4 border-t border-[var(--border-soft)] flex justify-between gap-1 pl-2">
-                                       <button
-                                           onClick={() => { setContratoActivo(c); setMontoAbono(''); setMetodoPagoAbono(''); setIsAbonoOpen(true); }}
-                                           className="flex-1 py-1.5 rounded bg-green-500/10 hover:bg-green-500/20 text-green-500/70 hover:text-green-400 border border-green-500/20 transition-colors flex items-center justify-center"
-                                           title="Agregar Abono"
-                                       >
-                                           <DollarSign className="w-3.5 h-3.5"/>
-                                       </button>
+                                       {(() => {
+                                           const sinSaldo = Number(c.saldo_pendiente || 0) <= 0;
+                                           return (
+                                             <button
+                                               onClick={() => { if (sinSaldo) return; setContratoActivo(c); setMontoAbono(''); setMetodoPagoAbono(''); setIsAbonoOpen(true); }}
+                                               disabled={sinSaldo}
+                                               className={`flex-1 py-1.5 rounded border transition-colors flex items-center justify-center ${sinSaldo ? 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-soft)] opacity-40 cursor-not-allowed' : 'bg-green-500/10 hover:bg-green-500/20 text-green-500/70 hover:text-green-400 border-green-500/20'}`}
+                                               title={sinSaldo ? 'Saldo en cero — sin abonos pendientes' : 'Agregar Abono'}
+                                             >
+                                               <DollarSign className="w-3.5 h-3.5"/>
+                                             </button>
+                                           );
+                                       })()}
                                        <button
                                            onClick={() => setEditandoContrato(c)}
                                            className="flex-1 py-1.5 rounded bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-soft)] transition-colors flex items-center justify-center"

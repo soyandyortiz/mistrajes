@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Store, Loader2, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
 const IniciarSesion = () => {
@@ -55,9 +55,7 @@ const IniciarSesion = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="flex justify-center mb-8">
-            <div className="rounded-2xl flex items-center justify-center h-16 w-16 bg-[var(--bg-surface-2)] border border-[var(--border-soft)] shadow-xl shadow-[var(--color-primary-glow)]">
-                 <Store className="h-8 w-8 text-[var(--color-primary)]" />
-            </div>
+            <img src="/icono.svg" alt="MisTrajes" className="h-16 w-16 object-contain drop-shadow-xl" />
         </div>
         <h2 className="text-center text-4xl font-black tracking-tighter text-[var(--text-primary)] uppercase">
           Mis<span className="text-gradient-guambra">Trajes</span>

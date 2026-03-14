@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { validarCedula, validarRUC } from '../../../utils/validacionEcuador';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { toast } from 'sonner';
-import { 
-  Building2, Search, Plus, Trash2, Edit2, Eye, 
+import {
+  Building2, Search, Plus, Trash2, Edit2, Eye,
   MapPin, User, Phone, Mail, Loader2, CheckCircle2,
-  Briefcase, Hash, Globe, AlertCircle, DollarSign
+  Briefcase, Hash, Globe, AlertCircle, DollarSign, Download
 } from 'lucide-react';
+import { exportarCSV, formatFecha } from '../../../utils/exportarCSV';
 
 const ModuleNavbar = ({ currentTab, setTab }) => (
   <div className="border-b border-[var(--border-soft)] pb-px mb-8 overflow-x-auto no-scrollbar">
@@ -204,6 +206,32 @@ export default function Proveedores() {
   };
 
 
+  // -- EXPORTAR --
+  const handleExportarProveedores = () => {
+    if (listaFiltrada.length === 0) return;
+
+    exportarCSV({
+      nombreArchivo: `proveedores_${profile?.tenant?.nombre_negocio || 'mistrajes'}`,
+      filas: listaFiltrada,
+      columnas: [
+        { titulo: 'Tipo Entidad',           obtener: p => p.tipo_entidad === 'empresa' ? 'Empresa' : 'Persona Natural' },
+        { titulo: 'Nombre / Razón Social',  obtener: p => p.nombre_empresa || p.nombre_completo || '' },
+        { titulo: 'Cédula / RUC',           obtener: p => p.ruc_empresa || p.identificacion || '' },
+        { titulo: 'Tipo de Proveedor',      obtener: p => p.tipo_proveedor || '' },
+        { titulo: 'País',                   obtener: p => p.pais || 'Ecuador' },
+        { titulo: 'Ciudad',                 obtener: p => p.ciudad || '' },
+        { titulo: 'Dirección',              obtener: p => p.direccion || '' },
+        { titulo: 'Encargado / Contacto',   obtener: p => p.nombre_encargado || p.nombre_responsable || '' },
+        { titulo: 'Teléfono',               obtener: p => p.telefono || p.celular || '' },
+        { titulo: 'Email',                  obtener: p => p.email || '' },
+        { titulo: 'Deuda Activa ($)',       obtener: p => p.deuda_activa > 0 ? p.deuda_activa.toFixed(2) : '0.00' },
+        { titulo: 'Fecha de Registro',      obtener: p => formatFecha(p.created_at) },
+      ],
+    });
+
+    toast.success(`${listaFiltrada.length} proveedor(es) exportados correctamente`);
+  };
+
   // -- RENDER FILTRADO LISTA --
   const listaFiltrada = proveedores.filter(p => {
       const nomToSearch = (p.nombre_empresa || p.nombre_completo || '').toLowerCase();
@@ -232,6 +260,23 @@ export default function Proveedores() {
                     <option value="Empresa">Corporaciones / Empresas</option>
                     <option value="Persona Natural">Personas Naturales Independentes</option>
                  </select>
+              </div>
+
+              {/* Barra de resultados + exportar */}
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                  {listaFiltrada.length === proveedores.length
+                    ? `${proveedores.length} proveedor(es) en total`
+                    : `${listaFiltrada.length} de ${proveedores.length} proveedor(es) (filtrado)`}
+                </p>
+                <button
+                  onClick={handleExportarProveedores}
+                  disabled={listaFiltrada.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/15 font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar Proveedores
+                </button>
               </div>
 
               {/* Tabla */}
@@ -430,7 +475,8 @@ export default function Proveedores() {
                        
                        <div>
                           <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2 block flex items-center gap-1.5"><Hash className="w-3 h-3"/> {formData.tipo_entidad === 'Empresa' ? 'Registro Único de Contribuyentes (RUC)' : 'Cédula de Ciudadanía'} <span className="text-red-400">*</span></label>
-                          <input required type="text" className="input-guambra font-mono" value={formData.identificacion} onChange={e => handleChange('identificacion', e.target.value)} />
+                          <input required type="text" className="input-guambra font-mono" maxLength={formData.tipo_entidad === 'Empresa' ? 13 : 10} value={formData.identificacion} onChange={e => handleChange('identificacion', e.target.value)} />
+                          {(() => { const r = formData.tipo_entidad === 'Empresa' ? validarRUC(formData.identificacion) : validarCedula(formData.identificacion); return r.valido !== null ? <p className={`text-[9px] font-bold mt-1 ${r.valido ? 'text-green-400' : 'text-red-400'}`}>{r.valido ? '✓' : '✗'} {r.mensaje}</p> : null; })()}
                        </div>
                        
                        <div>

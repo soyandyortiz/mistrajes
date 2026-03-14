@@ -45,6 +45,8 @@ import Calendario from "./paginas/administracion/Operaciones/Calendario";
 import Planes from "./paginas/administracion/Planes";
 import PagarPlan from "./paginas/administracion/PagarPlan";
 import ConfiguracionesGenerales from "./paginas/administracion/Operaciones/ConfiguracionesGenerales";
+import Descuentos from "./paginas/administracion/Operaciones/Descuentos";
+import MiPerfil from "./paginas/administracion/MiPerfil";
 
 // Capa de Layout para Páginas Públicas (Marketing)
 const PublicLayout = () => (
@@ -304,6 +306,7 @@ function App() {
           }
         >
           <Route path="/dashboard" element={<AdminDashboard />} />
+          <Route path="/perfil" element={<MiPerfil />} />
 
           {/* Configuraciones Generales (Ambos) */}
           <Route
@@ -582,6 +585,22 @@ function App() {
               path="historial"
               element={<CajaGeneral initialTab="historial" />}
             />
+          </Route>
+
+          {/* Descuentos (Solo Admin) */}
+          <Route
+            path="/descuentos"
+            element={
+              <ProtectedRoute allowedRoles={["tenant_admin"]}>
+                <ModuleLayout
+                  title="Códigos de Descuento"
+                  description="Gestiona cupones y promociones para tus clientes"
+                  tabs={[]}
+                />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Descuentos />} />
           </Route>
 
           {/* Comprobantes (Solo Admin) */}

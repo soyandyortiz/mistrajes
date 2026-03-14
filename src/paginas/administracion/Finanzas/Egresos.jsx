@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { toast } from 'sonner';
-import { 
+import {
   Plus, Search, Calendar, FileText, User as UserIcon, Loader2,
   CheckCircle2, AlertCircle, ShoppingCart, DollarSign, Wallet,
-  Building2, Receipt, ArrowDownRight, CreditCard, ChevronDown, CheckCircle
+  Building2, Receipt, ArrowDownRight, CreditCard, ChevronDown, CheckCircle, X
 } from 'lucide-react';
 
 // Constantes de configuración que conectan con los Enums reales de Postgres
@@ -365,8 +365,7 @@ export default function Egresos({ initialTab = 'registrar' }) {
                   egreso_id: deudaId,
                   tenant_id: profile.tenant_id,
                   monto: montoAbono,
-                  referencia: formAbono.metodo_pago,
-                  descripcion: formAbono.descripcion,
+                  referencia: `${formAbono.metodo_pago}${formAbono.descripcion ? ' — ' + formAbono.descripcion : ''}`,
                   registrado_por: profile.id,
                   nombre_registrador_snapshot: profile.nombre_completo || 'Usuario',
                   fecha_pago: getLocalDateStringAbono()
@@ -828,115 +827,142 @@ export default function Egresos({ initialTab = 'registrar' }) {
     )}
 
             {/* MODAL DETALLE DE EGRESO */}
-            {modalEgreso && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-[var(--bg-surface-1)] border border-[var(--border-soft)] rounded-2xl w-full max-w-3xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+            {modalEgreso && (() => {
+                const lineas = modalEgreso.lineas_egreso && modalEgreso.lineas_egreso.length > 0
+                    ? modalEgreso.lineas_egreso
+                    : null;
+                const descParts = modalEgreso.descripcion
+                    ? modalEgreso.descripcion.split(';').map(s => s.trim()).filter(Boolean)
+                    : [];
+                const totalConceptos = lineas ? lineas.length : descParts.length;
+                return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 lg:pl-72 bg-[var(--bg-page)]/80 backdrop-blur-md animate-in fade-in">
+                    <div className="glass-card w-full max-w-3xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
 
                         {/* Modal Header */}
-                        <div className="p-6 border-b border-[var(--border-soft)] flex justify-between items-start bg-[var(--bg-surface-2)]">
-                            <div>
-                                <span className="px-2 py-1 bg-primary/10 text-primary border border-primary/20 rounded-md text-[9px] font-black uppercase tracking-widest mb-3 inline-block">
-                                    Detalle de Transacción
-                                </span>
-                                <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">{modalEgreso.destinatario_nombre}</h2>
-                                <p className="text-xs text-[var(--text-muted)] font-mono">
-                                    Emitido: {new Date(modalEgreso.fecha_egreso + 'T00:00:00').toLocaleDateString()} {modalEgreso.created_at ? new Date(modalEgreso.created_at).toLocaleTimeString() : ''}
-                                    {/* Ref check */}
-                                    <span className="ml-4 pl-4 border-l border-[var(--border-soft)]">Ref: {modalEgreso.id.substring(0, 8)}</span>
+                        <div className="px-6 py-5 border-b border-[var(--border-soft)] flex justify-between items-start bg-[var(--bg-surface-2)]">
+                            <div className="flex-1 min-w-0 pr-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded text-[9px] font-black uppercase tracking-widest">
+                                        Egreso #{modalEgreso.id?.substring(0, 8).toUpperCase()}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                        modalEgreso.modalidad === 'contado'
+                                            ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                            : 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                                    }`}>
+                                        {modalEgreso.modalidad === 'contado' ? 'Contado' : 'Crédito'}
+                                    </span>
+                                </div>
+                                <h2 className="text-lg font-black text-[var(--text-primary)] tracking-tight truncate">
+                                    {modalEgreso.destinatario_nombre || 'Egreso General'}
+                                </h2>
+                                <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">
+                                    {new Date(modalEgreso.fecha_egreso + 'T00:00:00').toLocaleDateString('es-EC', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                    {modalEgreso.created_at && <span className="ml-2">· {new Date(modalEgreso.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
                                 </p>
                             </div>
-                            <button onClick={() => setModalEgreso(null)} className="w-8 h-8 rounded-lg bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] flex items-center justify-center text-[var(--text-secondary)] transition-colors">
-                                X
+                            <button
+                                onClick={() => setModalEgreso(null)}
+                                className="w-9 h-9 rounded-xl bg-[var(--bg-surface-3)] hover:bg-rose-500/10 hover:text-rose-400 flex items-center justify-center text-[var(--text-muted)] transition-all border border-[var(--border-soft)] shrink-0"
+                            >
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         {/* Modal Content */}
-                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
                             {/* Summary Cards */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-4 rounded-xl">
-                                    <span className="block text-[9px] uppercase tracking-widest text-[var(--text-muted)] mb-1">Categoría</span>
-                                    <span className="font-bold text-sm text-[var(--text-primary)]">{CATEGORIAS_EGRESO.find(c => c.value === modalEgreso.categoria)?.label || modalEgreso.categoria}</span>
-                                </div>
-                                <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-4 rounded-xl">
-                                    <span className="block text-[9px] uppercase tracking-widest text-[var(--text-muted)] mb-1">Operación</span>
-                                    <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{modalEgreso.modalidad}</span>
-                                </div>
-                                <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-4 rounded-xl">
-                                    <span className="block text-[9px] uppercase tracking-widest text-[var(--text-muted)] mb-1">Estado</span>
-                                    <span className={`font-bold text-sm ${modalEgreso.estado_deuda === 'pagado' ? 'text-green-400' : 'text-orange-400'}`}>
-                                        {modalEgreso.estado_deuda.toUpperCase()}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-4 rounded-xl hover:border-primary/30 transition-colors">
+                                    <span className="block text-[8px] uppercase tracking-[0.15em] font-black text-[var(--text-muted)] mb-1.5">Categoría</span>
+                                    <span className="font-bold text-xs text-[var(--text-primary)] leading-tight">
+                                        {CATEGORIAS_EGRESO.find(c => c.value === modalEgreso.categoria)?.label || modalEgreso.categoria}
                                     </span>
                                 </div>
-                                <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-4 rounded-xl">
-                                    <span className="block text-[9px] uppercase tracking-widest text-[var(--text-muted)] mb-1">Total Egreso</span>
-                                    <span className="font-mono font-black text-rose-400 text-lg">${modalEgreso.monto_total?.toFixed(2)}</span>
+                                <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-4 rounded-xl hover:border-primary/30 transition-colors">
+                                    <span className="block text-[8px] uppercase tracking-[0.15em] font-black text-[var(--text-muted)] mb-1.5">Registrado por</span>
+                                    <span className="font-bold text-xs text-[var(--text-primary)] leading-tight">
+                                        {modalEgreso.registrado_por_nombre || 'Usuario'}
+                                    </span>
+                                </div>
+                                <div className="bg-[var(--bg-surface-2)] border border-[var(--border-soft)] p-4 rounded-xl hover:border-primary/30 transition-colors">
+                                    <span className="block text-[8px] uppercase tracking-[0.15em] font-black text-[var(--text-muted)] mb-1.5">Estado Deuda</span>
+                                    <span className={`font-black text-xs uppercase tracking-wider ${modalEgreso.estado_deuda === 'pagado' ? 'text-green-400' : 'text-orange-400'}`}>
+                                        {modalEgreso.estado_deuda === 'pagado' ? '✓ Pagado' : '⏳ Pendiente'}
+                                    </span>
+                                </div>
+                                <div className="bg-rose-500/5 border border-rose-500/20 p-4 rounded-xl">
+                                    <span className="block text-[8px] uppercase tracking-[0.15em] font-black text-rose-400/70 mb-1.5">Total Egreso</span>
+                                    <span className="font-mono font-black text-rose-400 text-xl">-${modalEgreso.monto_total?.toFixed(2)}</span>
                                 </div>
                             </div>
 
                             {/* Details Table */}
                             <div>
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
-                                    <FileText className="w-4 h-4" />
-                                    Desglose de Factura ({modalEgreso.lineas_egreso?.length > 0 ? modalEgreso.lineas_egreso.length : modalEgreso.descripcion.split(';').length} conceptos)
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3 flex items-center gap-2">
+                                    <FileText className="w-3.5 h-3.5 text-primary" />
+                                    Desglose de Conceptos
+                                    <span className="ml-auto text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded text-[9px]">
+                                        {totalConceptos} {totalConceptos === 1 ? 'ítem' : 'ítems'}
+                                    </span>
                                 </h3>
-                                <div className="border border-[var(--border-soft)] rounded-xl overflow-hidden bg-[var(--bg-surface-2)]">
+                                <div className="border border-[var(--border-soft)] rounded-xl overflow-hidden">
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-[var(--bg-surface-3)] border-b border-[var(--border-soft)]">
+                                        <thead className="bg-[var(--bg-surface-2)] border-b border-[var(--border-soft)]">
                                             <tr>
-                                                <th className="p-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center w-16">Cant.</th>
-                                                <th className="p-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Descripción</th>
-                                                <th className="p-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right w-24">Costo U.</th>
-                                                <th className="p-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right w-28">Subtotal</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center w-14">Cant.</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">Descripción</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right w-24">Costo U.</th>
+                                                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] text-right w-28">Subtotal</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-[var(--border-soft)] text-[var(--text-primary)]">
-                                            {modalEgreso.lineas_egreso && modalEgreso.lineas_egreso.length > 0 ? (
-                                                // Render structured data from DB (lineas_egreso)
-                                                modalEgreso.lineas_egreso.map((linea, idx) => (
-                                                    <tr key={idx} className="hover:bg-[var(--bg-surface-3)]">
-                                                        <td className="p-3 text-center text-[var(--text-secondary)] font-mono">{linea.cantidad || 1}</td>
-                                                        <td className="p-3">{linea.descripcion}</td>
-                                                        <td className="p-3 text-right text-[var(--text-secondary)] font-mono">${Number(linea.precio_unitario || 0).toFixed(2)}</td>
-                                                        <td className="p-3 text-right font-mono font-bold">${Number(linea.subtotal || 0).toFixed(2)}</td>
+                                        <tbody className="divide-y divide-[var(--border-soft)]">
+                                            {lineas ? (
+                                                lineas.map((linea, idx) => (
+                                                    <tr key={idx} className="hover:bg-[var(--bg-surface-2)] transition-colors">
+                                                        <td className="px-4 py-3 text-center text-[var(--text-secondary)] font-mono text-xs">{linea.cantidad || 1}</td>
+                                                        <td className="px-4 py-3 text-[var(--text-primary)] text-xs font-medium">{linea.descripcion}</td>
+                                                        <td className="px-4 py-3 text-right text-[var(--text-secondary)] font-mono text-xs">${Number(linea.precio_unitario || 0).toFixed(2)}</td>
+                                                        <td className="px-4 py-3 text-right font-mono font-bold text-[var(--text-primary)] text-sm">${Number(linea.subtotal || 0).toFixed(2)}</td>
+                                                    </tr>
+                                                ))
+                                            ) : descParts.length > 0 ? (
+                                                descParts.map((text, idx) => (
+                                                    <tr key={idx} className="hover:bg-[var(--bg-surface-2)] transition-colors">
+                                                        <td className="px-4 py-3 text-center text-[var(--text-muted)] text-xs">—</td>
+                                                        <td className="px-4 py-3 text-[var(--text-primary)] text-xs font-medium">{text}</td>
+                                                        <td className="px-4 py-3 text-right text-[var(--text-muted)] text-xs">—</td>
+                                                        <td className="px-4 py-3 text-right text-[var(--text-muted)] text-xs">—</td>
                                                     </tr>
                                                 ))
                                             ) : (
-                                                // Fallback to split description if relational data missing (legacy records)
-                                                modalEgreso.descripcion.split(';').map((desc, idx) => {
-                                                    const text = desc.trim();
-                                                    if (!text) return null;
-                                                    return (
-                                                        <tr key={idx} className="hover:bg-[var(--bg-surface-3)]">
-                                                            <td className="p-3 text-center text-[var(--text-muted)] italic">-</td>
-                                                            <td className="p-3">{text}</td>
-                                                            <td className="p-3 text-right text-[var(--text-muted)] italic">-</td>
-                                                            <td className="p-3 text-right text-[var(--text-muted)] italic">-</td>
-                                                        </tr>
-                                                    );
-                                                })
+                                                <tr>
+                                                    <td colSpan="4" className="px-4 py-6 text-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Sin detalle disponible</td>
+                                                </tr>
                                             )}
                                         </tbody>
-                                        <tfoot className="bg-[var(--bg-surface-3)] border-t py-2 border-[var(--border-soft)]">
+                                        <tfoot className="bg-[var(--bg-surface-2)] border-t border-[var(--border-soft)]">
                                             <tr>
-                                                <td colSpan="3" className="p-3 text-right text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)]">Total General</td>
-                                                <td className="p-3 text-right font-mono font-black text-rose-400">${modalEgreso.monto_total?.toFixed(2)}</td>
+                                                <td colSpan="3" className="px-4 py-3 text-right text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)]">Total General</td>
+                                                <td className="px-4 py-3 text-right font-mono font-black text-rose-400 text-base">-${modalEgreso.monto_total?.toFixed(2)}</td>
                                             </tr>
                                         </tfoot>
                                     </table>
                                 </div>
                             </div>
 
-                            {/* Footer Action */}
-                            <div className="flex justify-end pt-4 border-t border-[var(--border-soft)]">
-                                <button onClick={() => setModalEgreso(null)} className="btn-guambra-secondary h-12 px-8">
-                                    Cerrar Visualizador
+                            {/* Footer */}
+                            <div className="flex justify-end pt-2 border-t border-[var(--border-soft)]">
+                                <button onClick={() => setModalEgreso(null)} className="px-6 py-2.5 rounded-xl border border-[var(--border-soft)] text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)] transition-all">
+                                    Cerrar
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
         </div>
     );
